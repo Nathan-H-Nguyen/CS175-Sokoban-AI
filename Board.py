@@ -7,12 +7,13 @@ class Board:
     Represents the Sokoban game board.
 
     Parses an input file and initializes the board with walls, boxes, storage locations,
-    and the starting agent position. Board is a 2D-Matrix
+    and the starting agent position. Board is a 2D-Matrix.
     """
 
+    ########### INITIALIZATION ##########
     def __init__(self, file: str) -> None:
         """
-        Initializes the Board object
+        Initializes the Board object.
 
         Args:
             filename (str): Path to the Sokoban input file.
@@ -20,24 +21,31 @@ class Board:
         Returns:
             None
         """
-        self.file = file
+        self.file = file # Input file
+
         self.rows = 0 # Number of rows in the board
         self.cols = 0 # Number of columns in the board
         self.board = [] # 2D-Matrix for board itself
+
         self.num_walls = 0 # Total number of walls
         self.walls = set() # Set containing tuples() of the (x,y) coordinates
+
         self.num_boxes = 0 #Total number of boxes
         self.boxes = set() # Set containing tuples() of the (x,y) coordinates
+
         self.num_storages = 0 # Total number of storage locations
         self.storages = set() # Set containing tuples() of the (x,y) coordinates
-        self.starting_pos = tuple() # Starting (x,y) location
 
+        self.starting_pos = tuple() # Starting (x,y) location
+        self.player_pos = tuple() # Current player (x,y) location
+
+        # Initialize data members and board
         self._initialize_data_members()
         self._initialize_game_board()
 
     def _initialize_data_members(self) -> None:
         """
-        Parses input file and initializes all data members other than board itself
+        Parses input file and initializes all data members other than board itself.
 
         Returns:
             None
@@ -82,13 +90,14 @@ class Board:
                 # Intialize starting position
                 x, y = map(int, content[4].strip().split())
                 self.starting_pos = (x-1, y-1)
+                self.player_pos = (x-1, y-1)
 
         except Exception as e:
             print(f"Error: {e}")
 
     def _initialize_game_board(self) -> None:
         """
-        Initializes the game board as a 2D-Matrix
+        Initializes the game board as a 2D-Matrix.
 
         Returns:
             None
@@ -112,6 +121,76 @@ class Board:
         # Place Player
         self.board[self.starting_pos[0]][self.starting_pos[1]] = '@'
 
+    ########### PUBLIC METHODS ##########
+    def move(self, direction: str) -> bool:
+        """
+        Attempts to move the player in the specified direction.
+        
+        Returns:
+            bool: True if player moved, False otherwise
+        """
+        x, y = self.player_pos # Get current player coordinates
+        move_coordinate = None # Coordinate we are trying to move to
+
+        # Get coordinate we are trying to move to
+        if direction == 'L':
+            move_coordinate = (x, y-1)
+        elif direction == 'R':
+            move_coordinate = (x, y+1)
+        elif direction == 'U':
+            move_coordinate = (x-1, y)
+        elif direction == 'D':
+            move_coordinate = (x+1, y)
+        else:
+            raise ValueError(f"Invalid direction: {direction}. Must be one of 'L', 'R', 'U', or 'D'.")
+        
+        # If square is a wall, then we can't move and return false
+        if move_coordinate in self.walls:
+            return False
+        
+        # If square is a box attempt to push and move in that spot
+        if move_coordinate in self.boxes:
+            if self.push_box(move_coordinate, direction): # Push box
+                # Remove player from current space
+                if self.player_pos in self.storages:
+                    self.board[x][y] = '.'
+                else:
+                    self.board[x][y] = ' '
+
+                # Move player into new space
+                self.board[move_coordinate[0]][move_coordinate[1]] = '@'
+                self.player_pos = move_coordinate
+                return True
+            return False
+        
+        # If square is neither a box or a wall then we can move there
+        # Remove player from current space
+        if self.player_pos in self.storages:
+            self.board[x][y] = '.'
+        else:
+            self.board[x][y] = ' '
+
+        # Move player into new space
+        self.board[move_coordinate[0]][move_coordinate[1]] = '@'
+        self.player_pos = move_coordinate
+
+        return True
+
+    def is_win(self) -> bool:
+        """
+        Checks if the current game state has won, i.e. all boxes on storage locations
+
+        Returns:
+            bool: Returns True upon win, False otherwise
+        """
+
+        # Check if all boxes are in storage locations, if no return False
+        for box in self.boxes:
+            if box not in self.storages:
+                return False
+            
+        return True
+
     def print(self) -> None:
         """
         Prints out the current Board to the console
@@ -125,8 +204,64 @@ class Board:
             for col in row:
                 line += col
             print(line)
+    
+    ########### PRIVATE HELPERS ##########
+    def push_box(self, coordinate: Tuple[int,int], direction: str) -> bool:
+        """
+        Attempts to push the specified box in the given direction.
 
+        Args:
+            coordinate (Tuple[int,int]): Tuple representing the coordinates of the box to be pushed (x,y).
+            direction (str): Str representing the direction to push the box: 'L', 'R', 'U', 'D'.
+        
+        Returns:
+            bool: True if box was pushed, False otherwise
+
+        Raises:
+            ValueError: If an invalid direction is passed as an argument.
+        """
+        x, y = coordinate
+        pushed_coordinate = None
+
+        # Get coordinate we are trying to push box to
+        if direction == 'L':
+            pushed_coordinate = (x, y-1)
+        elif direction == 'R':
+            pushed_coordinate = (x, y+1)
+        elif direction == 'U':
+            pushed_coordinate = (x-1, y)
+        elif direction == 'D':
+            pushed_coordinate = (x+1, y)
+        else:
+            raise ValueError(f"Invalid direction: {direction}. Must be one of 'L', 'R', 'U', or 'D'.")
+        
+        # If a Wall or Box is blocking that direction, then we can't push
+        if pushed_coordinate in self.walls or pushed_coordinate in self.boxes:
+            return False
+        
+        # Push box
+        if coordinate in self.storages:
+            self.board[x][y] = '.'
+        else:
+            self.board[x][y] = ' '
+        self.board[pushed_coordinate[0]][pushed_coordinate[1]] = '$'
+        self.boxes.remove(coordinate) # Remove old coordinate
+        self.boxes.add(pushed_coordinate) # Add new coordinate
+
+        return True
+            
 if __name__ == '__main__':
     board = Board(sys.argv[1])
+    valid = {'L', 'R', 'U', 'D'}
 
     board.print()
+    while not board.is_win():
+
+        direction = input("Enter a direction to move (L, R, U, D): ").strip().upper()
+        if direction not in valid:
+            print(f"Invalid direction '{direction}'.")
+            continue
+        board.move(direction)
+        board.print()
+    
+    print("Game Won!")

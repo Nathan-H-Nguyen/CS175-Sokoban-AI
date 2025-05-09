@@ -51,7 +51,7 @@ class Board:
         # Initialize data members and board
         self._initialize_data_members()
         self._initialize_game_board()
-    
+
     def _initialize_data_members(self) -> None:
         """
         Parses input file and initializes all data members other than board itself.
@@ -66,7 +66,7 @@ class Board:
 
             def decodeLine(line):
                 data = list(map(int, line.split()))
-                return data[0], set((data[i]-1, data[i + 1]-1) for i in range(1, len(data), 2))
+                return data[0], set((data[i] - 1, data[i + 1] - 1) for i in range(1, len(data), 2))
 
             self.rows, self.cols = map(int, content[0].split())
             self.num_walls, self.walls = decodeLine(content[1])
@@ -167,23 +167,23 @@ class Board:
             # If box in storage location skip, no need to check if trapped
             if box in self.storages:
                 continue
-            
+
             left = self._get_new_position(box, 'L')
             right = self._get_new_position(box, 'R')
             up = self._get_new_position(box, 'U')
             down = self._get_new_position(box, 'D')
 
-            if up in self.walls and right in self.walls: # Top right corner
+            if up in self.walls and right in self.walls:  # Top right corner
                 return True
-            elif right in self.walls and down in self.walls: # Bottom right corner
+            elif right in self.walls and down in self.walls:  # Bottom right corner
                 return True
-            elif down in self.walls and left in self.walls: # Bottom left corner
+            elif down in self.walls and left in self.walls:  # Bottom left corner
                 return True
-            elif left in self.walls and up in self.walls: # Top left corner
+            elif left in self.walls and up in self.walls:  # Top left corner
                 return True
 
         return False
-    
+
     ########### PRIVATE HELPERS ##########
     def _get_new_position(self, pos: Tuple[int, int], direction: str) -> Tuple[int, int]:
         #print("getnewposition")

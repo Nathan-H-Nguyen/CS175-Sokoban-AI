@@ -249,10 +249,40 @@ class Board:
         self.boxes.add(pushed_coordinate) # Add new coordinate
 
         return True
+
+    def box_corner_trap(self) -> bool:
+        """
+        Checks if any box is trapped in a corner and not on a storage location.
+
+        Returns:
+            bool: True if a box is trapped in a corner, else False
+        """
+        for box in self.boxes:
+            # If box in storage location skip, no need to check if trapped
+            if box in self.storages:
+                continue
             
+            x, y =  box
+            left = (x, y-1)
+            right = (x, y+1)
+            up = (x-1, y)
+            down = (x+1, y)
+
+            if up in self.walls and right in self.walls: # Top right corner
+                return True
+            elif right in self.walls and down in self.walls: # Bottom right corner
+                return True
+            elif down in self.walls and left in self.walls: # Bottom left corner
+                return True
+            elif left in self.walls and up in self.walls: # Top left corner
+                return True
+            
+        return False
+    
 if __name__ == '__main__':
     board = Board(sys.argv[1])
     valid = {'L', 'R', 'U', 'D'}
+    lose_flag = 0
 
     board.print()
     while not board.is_win():
@@ -263,5 +293,12 @@ if __name__ == '__main__':
             continue
         board.move(direction)
         board.print()
+
+        if board.box_corner_trap():
+            lose_flag = 1
+            break
     
-    print("Game Won!")
+    if not lose_flag:
+        print("Game Won!")
+    else:
+        print("Game Lost due to deadlock.")

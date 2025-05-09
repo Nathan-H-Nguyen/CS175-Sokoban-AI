@@ -150,20 +150,9 @@ class Board:
         
         # If square is a box attempt to push and move in that spot
         if move_coordinate in self.boxes:
-            if self.push_box(move_coordinate, direction): # Push box
-                # Remove player from current space
-                if self.player_pos in self.storages:
-                    self.board[x][y] = '.'
-                else:
-                    self.board[x][y] = ' '
-
-                # Move player into new space
-                self.board[move_coordinate[0]][move_coordinate[1]] = '@'
-                self.player_pos = move_coordinate
-                return True
-            return False
+            if not self.push_box(move_coordinate, direction): # Attempt to Push box
+                return False
         
-        # If square is neither a box or a wall then we can move there
         # Remove player from current space
         if self.player_pos in self.storages:
             self.board[x][y] = '.'

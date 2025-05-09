@@ -1,4 +1,7 @@
+import sys
+from collections import deque
 from typing import Set, Tuple
+
 
 class Board:
     """
@@ -15,48 +18,39 @@ class Board:
 
         Args:
             filename (str): Path to the Sokoban input file.
-        
+
         Returns:
             None
         """
-        self.file = file # Input file
+        self.ELEMENTS = {
+            'wall': '#',
+            'box': '$',
+            'storage': '.',
+            'player': '@',
+            'empty': ' '
+        }
 
-        self.rows = 0 # Number of rows in the board
-        self.cols = 0 # Number of columns in the board
-        self.board = [] # 2D-Matrix for board itself
+        self.file = file  # Input file
 
-        self.num_walls = 0 # Total number of walls
-        self.walls = set() # Set containing tuples() of the (x,y) coordinates
+        self.rows = 0  # Number of rows in the board
+        self.cols = 0  # Number of columns in the board
+        self.board = []  # 2D-Matrix for board itself
 
-        self.num_boxes = 0 #Total number of boxes
-        self.boxes = set() # Set containing tuples() of the (x,y) coordinates
+        self.num_walls = 0  # Total number of walls
+        self.walls = set()  # Set containing tuples() of the (x,y) coordinates
 
-        self.num_storages = 0 # Total number of storage locations
-        self.storages = set() # Set containing tuples() of the (x,y) coordinates
+        self.num_boxes = 0  # Total number of boxes
+        self.boxes = set()  # Set containing tuples() of the (x,y) coordinates
 
-        self.starting_pos = tuple() # Starting (x,y) location
-        self.player_pos = tuple() # Current player (x,y) location
+        self.num_storages = 0  # Total number of storage locations
+        self.storages = set()  # Set containing tuples() of the (x,y) coordinates
+
+        self.starting_pos = tuple()  # Starting (x,y) location
+        self.player_pos = tuple()  # Current player (x,y) location
 
         # Initialize data members and board
         self._initialize_data_members()
         self._initialize_game_board()
-
-
-    @staticmethod
-    def _get_target_coordinate(coord: tuple, direction: str):
-        x, y  = coord
-        if direction == 'L':
-            return x, y - 1
-        elif direction == 'R':
-            return x, y + 1
-        elif direction == 'U':
-            return x - 1, y
-        elif direction == 'D':
-            return x + 1, y
-
-        raise ValueError(
-            f"Invalid direction: {direction}. Must be one of 'L', 'R', 'U', or 'D'.")
-
 
     def _initialize_data_members(self) -> None:
         """
@@ -68,19 +62,43 @@ class Board:
 
         try:
             with open(self.file, 'r') as f:
-                content = f.read().splitlines()
+                content = f.readlines()
 
-            def decodeLine(line):
-                data = list(map(int, line.split()))
-                return data[0], set((data[i], data[i + 1]) for i in range(1, len(data), 2))
+                # Initialize rows and cols
+                self.rows, self.cols = map(int, content[0].strip().split())
 
-            self.rows, self.cols = map(int, content[0].split())
-            self.num_walls, self.walls = decodeLine(content[1])
-            self.num_boxes, self.boxes = decodeLine(content[2])
-            self.num_storages, self.storages = decodeLine(content[3])
-            x, y = map(int, content[4].split())
-            self.starting_pos = (x - 1, y - 1)
-            self.player_pos = (x - 1, y - 1)
+                # When getting x coordinates, get odd indexed elements
+                # When getting y coordinates, get even indexed elements (Except for 0 index as that is the total number of elements)
+                # Subtract x and y by 1 to account for 0 indexing
+
+                # Initialize num_walls and walls
+                wall_line = list(map(int, content[1].strip().split()))
+                self.num_walls = wall_line[0]
+                for i in range(self.num_walls):
+                    x = wall_line[1 + 2 * i] - 1
+                    y = wall_line[2 + 2 * i] - 1
+                    self.walls.add((x, y))
+
+                # Initialize num_boxes and boxes
+                box_line = list(map(int, content[2].strip().split()))
+                self.num_boxes = box_line[0]
+                for i in range(self.num_boxes):
+                    x = box_line[1 + 2 * i] - 1
+                    y = box_line[2 + 2 * i] - 1
+                    self.boxes.add((x, y))
+
+                # Initialize num_storages and storages
+                storage_line = list(map(int, content[3].strip().split()))
+                self.num_storages = storage_line[0]
+                for i in range(self.num_storages):
+                    x = storage_line[1 + 2 * i] - 1
+                    y = storage_line[2 + 2 * i] - 1
+                    self.storages.add((x, y))
+
+                # Initalize starting position
+                x, y = map(int, content[4].strip().split())
+                self.starting_pos = (x - 1, y - 1)
+                self.player_pos = (x - 1, y - 1)
 
         except Exception as e:
             print(f"Error: {e}")
@@ -94,55 +112,43 @@ class Board:
         """
 
         # Initialize empty board
-        self.board = [[' ']*self.cols for row in range(self.rows)]
+        self.board = [[' '] * self.cols for row in range(self.rows)]
 
         # Place Walls
         for x, y in self.walls:
-            self.board[x][y] = '#'
+            self.board[x][y] = self.ELEMENTS['wall']
 
         # Place Boxes
         for x, y in self.boxes:
-            self.board[x][y] = '$'
-        
+            self.board[x][y] = self.ELEMENTS['box']
+
         # Place Storage Locations
         for x, y in self.storages:
-            self.board[x][y] = '.'
-        
+            self.board[x][y] = self.ELEMENTS['storage']
+
         # Place Player
-        self.board[self.starting_pos[0]][self.starting_pos[1]] = '@'
+        self.board[self.starting_pos[0]][self.starting_pos[1]] = self.ELEMENTS['player']
 
     ########### PUBLIC METHODS ##########
     def move(self, direction: str) -> bool:
         """
         Attempts to move the player in the specified direction.
-        
+
         Returns:
             bool: True if player moved, False otherwise
         """
-        x, y = self.player_pos # Get current player coordinates
+        """Attempt to move the player in the given direction."""
+        new_pos = self._get_new_position(self.player_pos, direction)
 
-        # Get coordinate we are trying to move to
-        move_coordinate = self._get_target_coordinate((x,y), direction)
-        
-        # If square is a wall, then we can't move and return false
-        if move_coordinate in self.walls:
+        if not self._is_valid_move(new_pos):
             return False
-        
-        # If square is a box attempt to push and move in that spot
-        if move_coordinate in self.boxes:
-            if not self.push_box(move_coordinate, direction): # Attempt to Push box
+
+        if new_pos in self.boxes:
+            if not self._push_box(new_pos, direction):
                 return False
-        
-        # Remove player from current space
-        if self.player_pos in self.storages:
-            self.board[x][y] = '.'
-        else:
-            self.board[x][y] = ' '
 
-        # Move player into new space
-        self.board[move_coordinate[0]][move_coordinate[1]] = '@'
-        self.player_pos = move_coordinate
-
+        # Update player position
+        self._update_position(self.player_pos, new_pos)
         return True
 
     def is_win(self) -> bool:
@@ -157,7 +163,7 @@ class Board:
         for box in self.boxes:
             if box not in self.storages:
                 return False
-            
+
         return True
 
     def print(self) -> None:
@@ -173,67 +179,60 @@ class Board:
             for col in row:
                 line += col
             print(line)
-    
+
     ########### PRIVATE HELPERS ##########
-    def push_box(self, coordinate: Tuple[int,int], direction: str) -> bool:
-        """
-        Attempts to push the specified box in the given direction.
+    def _get_new_position(self, pos: Tuple[int, int], direction: str) -> Tuple[int, int]:
+        print("getnewposition")
+        """Calculate new position based on direction."""
+        x, y = pos
+        direction_map = {
+            'L': (x, y - 1),
+            'R': (x, y + 1),
+            'U': (x - 1, y),
+            'D': (x + 1, y)
+        }
+        return direction_map[direction]
 
-        Args:
-            coordinate (Tuple[int,int]): Tuple representing the coordinates of the box to be pushed (x,y).
-            direction (str): Str representing the direction to push the box: 'L', 'R', 'U', 'D'.
-        
-        Returns:
-            bool: True if box was pushed, False otherwise
+    def _is_valid_move(self, pos: Tuple[int, int]) -> bool:
+        print("isvalid")
+        """Check if a position is valid for movement."""
+        return pos not in self.walls
 
-        Raises:
-            ValueError: If an invalid direction is passed as an argument.
-        """
-        x, y = coordinate
+    def _push_box(self, box_pos: Tuple[int, int], direction: str) -> bool:
+        print("pushbox")
+        """Attempt to push a box in the given direction."""
+        new_box_pos = self._get_new_position(box_pos, direction)
 
-        # Get coordinate we are trying to push box to
-        pushed_coordinate = self._get_target_coordinate(coordinate, direction)
-
-        # If a Wall or Box is blocking that direction, then we can't push
-        if pushed_coordinate in self.walls or pushed_coordinate in self.boxes:
+        if not self._is_valid_move(new_box_pos):
             return False
-        
-        # Push box
-        if coordinate in self.storages:
-            self.board[x][y] = '.'
-        else:
-            self.board[x][y] = ' '
-        self.board[pushed_coordinate[0]][pushed_coordinate[1]] = '$'
-        self.boxes.remove(coordinate) # Remove old coordinate
-        self.boxes.add(pushed_coordinate) # Add new coordinate
 
+        # Update box position
+        self.boxes.remove(box_pos)
+        self.boxes.add(new_box_pos)
+
+        # Update board
+        self._update_box_position(box_pos, new_box_pos)
         return True
 
-    def box_corner_trap(self) -> bool:
-        """
-        Checks if any box is trapped in a corner and not on a storage location.
+    def _update_position(self, old_pos: Tuple[int, int], new_pos: Tuple[int, int]) -> None:
+        print("update pos")
+        """Update player position on the board."""
+        x, y = old_pos
+        self.board[x][y] = (self.ELEMENTS['storage']
+                            if old_pos in self.storages
+                            else self.ELEMENTS['empty'])
 
-        Returns:
-            bool: True if a box is trapped in a corner, else False
-        """
-        for box in self.boxes:
-            # If box in storage location skip, no need to check if trapped
-            if box in self.storages:
-                continue
-            
-            x, y =  box
-            left = (x, y-1)
-            right = (x, y+1)
-            up = (x-1, y)
-            down = (x+1, y)
+        self.player_pos = new_pos
+        x, y = new_pos
+        self.board[x][y] = self.ELEMENTS['player']
 
-            if up in self.walls and right in self.walls: # Top right corner
-                return True
-            elif right in self.walls and down in self.walls: # Bottom right corner
-                return True
-            elif down in self.walls and left in self.walls: # Bottom left corner
-                return True
-            elif left in self.walls and up in self.walls: # Top left corner
-                return True
-            
-        return False
+    def _update_box_position(self, old_pos: Tuple[int, int], new_pos: Tuple[int, int]) -> None:
+        print("update box pos")
+        """Update box position on the board."""
+        x, y = old_pos
+        self.board[x][y] = (self.ELEMENTS['storage']
+                            if old_pos in self.storages
+                            else self.ELEMENTS['empty'])
+
+        x, y = new_pos
+        self.board[x][y] = self.ELEMENTS['box']

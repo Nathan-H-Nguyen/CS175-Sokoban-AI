@@ -51,7 +51,7 @@ class Board:
         # Initialize data members and board
         self._initialize_data_members()
         self._initialize_game_board()
-
+    
     def _initialize_data_members(self) -> None:
         """
         Parses input file and initializes all data members other than board itself.
@@ -62,43 +62,19 @@ class Board:
 
         try:
             with open(self.file, 'r') as f:
-                content = f.readlines()
+                content = f.read().splitlines()
 
-                # Initialize rows and cols
-                self.rows, self.cols = map(int, content[0].strip().split())
+            def decodeLine(line):
+                data = list(map(int, line.split()))
+                return data[0], set((data[i]-1, data[i + 1]-1) for i in range(1, len(data), 2))
 
-                # When getting x coordinates, get odd indexed elements
-                # When getting y coordinates, get even indexed elements (Except for 0 index as that is the total number of elements)
-                # Subtract x and y by 1 to account for 0 indexing
-
-                # Initialize num_walls and walls
-                wall_line = list(map(int, content[1].strip().split()))
-                self.num_walls = wall_line[0]
-                for i in range(self.num_walls):
-                    x = wall_line[1 + 2 * i] - 1
-                    y = wall_line[2 + 2 * i] - 1
-                    self.walls.add((x, y))
-
-                # Initialize num_boxes and boxes
-                box_line = list(map(int, content[2].strip().split()))
-                self.num_boxes = box_line[0]
-                for i in range(self.num_boxes):
-                    x = box_line[1 + 2 * i] - 1
-                    y = box_line[2 + 2 * i] - 1
-                    self.boxes.add((x, y))
-
-                # Initialize num_storages and storages
-                storage_line = list(map(int, content[3].strip().split()))
-                self.num_storages = storage_line[0]
-                for i in range(self.num_storages):
-                    x = storage_line[1 + 2 * i] - 1
-                    y = storage_line[2 + 2 * i] - 1
-                    self.storages.add((x, y))
-
-                # Initalize starting position
-                x, y = map(int, content[4].strip().split())
-                self.starting_pos = (x - 1, y - 1)
-                self.player_pos = (x - 1, y - 1)
+            self.rows, self.cols = map(int, content[0].split())
+            self.num_walls, self.walls = decodeLine(content[1])
+            self.num_boxes, self.boxes = decodeLine(content[2])
+            self.num_storages, self.storages = decodeLine(content[3])
+            x, y = map(int, content[4].split())
+            self.starting_pos = (x - 1, y - 1)
+            self.player_pos = (x - 1, y - 1)
 
         except Exception as e:
             print(f"Error: {e}")
@@ -180,9 +156,37 @@ class Board:
                 line += col
             print(line)
 
+    def box_corner_trap(self) -> bool:
+        """
+        Checks if any box is trapped in a corner and not on a storage location.
+
+        Returns:
+            bool: True if a box is trapped in a corner, else False
+        """
+        for box in self.boxes:
+            # If box in storage location skip, no need to check if trapped
+            if box in self.storages:
+                continue
+            
+            left = self._get_new_position(box, 'L')
+            right = self._get_new_position(box, 'R')
+            up = self._get_new_position(box, 'U')
+            down = self._get_new_position(box, 'D')
+
+            if up in self.walls and right in self.walls: # Top right corner
+                return True
+            elif right in self.walls and down in self.walls: # Bottom right corner
+                return True
+            elif down in self.walls and left in self.walls: # Bottom left corner
+                return True
+            elif left in self.walls and up in self.walls: # Top left corner
+                return True
+
+        return False
+    
     ########### PRIVATE HELPERS ##########
     def _get_new_position(self, pos: Tuple[int, int], direction: str) -> Tuple[int, int]:
-        print("getnewposition")
+        #print("getnewposition")
         """Calculate new position based on direction."""
         x, y = pos
         direction_map = {
@@ -194,12 +198,12 @@ class Board:
         return direction_map[direction]
 
     def _is_valid_move(self, pos: Tuple[int, int]) -> bool:
-        print("isvalid")
+        #print("isvalid")
         """Check if a position is valid for movement."""
         return pos not in self.walls
 
     def _push_box(self, box_pos: Tuple[int, int], direction: str) -> bool:
-        print("pushbox")
+        #print("pushbox")
         """Attempt to push a box in the given direction."""
         new_box_pos = self._get_new_position(box_pos, direction)
 
@@ -215,7 +219,7 @@ class Board:
         return True
 
     def _update_position(self, old_pos: Tuple[int, int], new_pos: Tuple[int, int]) -> None:
-        print("update pos")
+        #print("update pos")
         """Update player position on the board."""
         x, y = old_pos
         self.board[x][y] = (self.ELEMENTS['storage']
@@ -227,7 +231,7 @@ class Board:
         self.board[x][y] = self.ELEMENTS['player']
 
     def _update_box_position(self, old_pos: Tuple[int, int], new_pos: Tuple[int, int]) -> None:
-        print("update box pos")
+        #print("update box pos")
         """Update box position on the board."""
         x, y = old_pos
         self.board[x][y] = (self.ELEMENTS['storage']

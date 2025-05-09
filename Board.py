@@ -43,6 +43,23 @@ class Board:
         self._initialize_data_members()
         self._initialize_game_board()
 
+
+    @staticmethod
+    def _get_target_coordinate(coord: tuple, direction: str):
+        x, y  = coord
+        if direction == 'L':
+            return x, y - 1
+        elif direction == 'R':
+            return x, y + 1
+        elif direction == 'U':
+            return x - 1, y
+        elif direction == 'D':
+            return x + 1, y
+
+        raise ValueError(
+            f"Invalid direction: {direction}. Must be one of 'L', 'R', 'U', or 'D'.")
+
+
     def _initialize_data_members(self) -> None:
         """
         Parses input file and initializes all data members other than board itself.
@@ -53,44 +70,19 @@ class Board:
 
         try:
             with open(self.file, 'r') as f:
-                content = f.readlines()
+                content = f.read().splitlines()
 
-                # Initialize rows and cols
-                self.rows, self.cols = map(int, content[0].strip().split())
+            def decodeLine(line):
+                data = list(map(int, line.split()))
+                return data[0], set((data[i], data[i + 1]) for i in range(1, len(data), 2))
 
-                # When getting x coordinates, get odd indexed elements
-                # When getting y coordinates, get even indexed elements (Except for 0 index as that is the total number of elements)
-                # Subtract x and y by 1 to account for 0 indexing
-
-                # Initialize num_walls and walls
-                wall_line = list(map(int, content[1].strip().split()))
-                self.num_walls = wall_line[0]
-                for i in range(self.num_walls):
-                    x = wall_line[1 + 2*i]-1
-                    y = wall_line[2 + 2*i]-1
-                    self.walls.add((x, y))
-
-
-                # Initialize num_boxes and boxes
-                box_line = list(map(int, content[2].strip().split()))
-                self.num_boxes = box_line[0]
-                for i in range(self.num_boxes):
-                    x = box_line[1 + 2*i]-1
-                    y = box_line[2 + 2*i]-1
-                    self.boxes.add((x, y))
-
-                # Initialize num_storages and storages
-                storage_line = list(map(int, content[3].strip().split()))
-                self.num_storages = storage_line[0]
-                for i in range(self.num_storages):
-                    x = storage_line[1 + 2*i]-1
-                    y = storage_line[2 + 2*i]-1
-                    self.storages.add((x, y))
-
-                # Intialize starting position
-                x, y = map(int, content[4].strip().split())
-                self.starting_pos = (x-1, y-1)
-                self.player_pos = (x-1, y-1)
+            self.rows, self.cols = map(int, content[0].split())
+            self.num_walls, self.walls = decodeLine(content[1])
+            self.num_boxes, self.boxes = decodeLine(content[2])
+            self.num_storages, self.storages = decodeLine(content[3])
+            x, y = map(int, content[4].split())
+            self.starting_pos = (x - 1, y - 1)
+            self.player_pos = (x - 1, y - 1)
 
         except Exception as e:
             print(f"Error: {e}")
@@ -130,19 +122,9 @@ class Board:
             bool: True if player moved, False otherwise
         """
         x, y = self.player_pos # Get current player coordinates
-        move_coordinate = None # Coordinate we are trying to move to
 
         # Get coordinate we are trying to move to
-        if direction == 'L':
-            move_coordinate = (x, y-1)
-        elif direction == 'R':
-            move_coordinate = (x, y+1)
-        elif direction == 'U':
-            move_coordinate = (x-1, y)
-        elif direction == 'D':
-            move_coordinate = (x+1, y)
-        else:
-            raise ValueError(f"Invalid direction: {direction}. Must be one of 'L', 'R', 'U', or 'D'.")
+        move_coordinate = self._get_target_coordinate((x,y), direction)
         
         # If square is a wall, then we can't move and return false
         if move_coordinate in self.walls:
@@ -210,20 +192,10 @@ class Board:
             ValueError: If an invalid direction is passed as an argument.
         """
         x, y = coordinate
-        pushed_coordinate = None
 
         # Get coordinate we are trying to push box to
-        if direction == 'L':
-            pushed_coordinate = (x, y-1)
-        elif direction == 'R':
-            pushed_coordinate = (x, y+1)
-        elif direction == 'U':
-            pushed_coordinate = (x-1, y)
-        elif direction == 'D':
-            pushed_coordinate = (x+1, y)
-        else:
-            raise ValueError(f"Invalid direction: {direction}. Must be one of 'L', 'R', 'U', or 'D'.")
-        
+        pushed_coordinate = self._get_target_coordinate(coordinate, direction)
+
         # If a Wall or Box is blocking that direction, then we can't push
         if pushed_coordinate in self.walls or pushed_coordinate in self.boxes:
             return False

@@ -4,7 +4,7 @@ from AI import SokobanSolver
 #/Users/kaydeereyes/PycharmProjects/CS175-Sokoban-AI/Sokoban-benchmarks/Sokoban/sokoban-01.txt
 if __name__ == '__main__':
     if len(sys.argv) < 2:
-        filename = input("Enter the input path filename (e.g., 'input.txt'): ")
+        filename = "Sokoban-benchmarks/Sokoban/" + input("Enter the input path filename (e.g., 'input.txt'): ")
     else:
         filename = sys.argv[1]
     board = Board(filename)
@@ -14,9 +14,9 @@ if __name__ == '__main__':
 
     valid = {'L', 'R', 'U', 'D'}
     version_valid = {'M', 'BFS'}
-    board.print()
 
     if version == 'M':
+        board.print()
         while not board.is_win():
             direction = input("Enter a direction to move (L, R, U, D): ").strip().upper()
             if direction not in valid:
@@ -34,10 +34,15 @@ if __name__ == '__main__':
             if not path:
                 print("No solution found.")
             else:
-                print("Solution found!")
+                print("\nSolution found!")
                 print("Moves:", ''.join(path))
+                print('\n')
+                board.print()
+                print('\n')
                 for move in path:
+                    print(f"Move: {move}")
                     board.move(move)
                     board.print()
+                    print('\n')
 
                 print("Game Won!")

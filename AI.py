@@ -11,6 +11,7 @@ class SokobanSolver:
         """
         Returns optimal path found by BFS.
         """
+        iteration = 1
         start_state = (self.initial_board.player_pos, frozenset(self.initial_board.boxes))
         queue = deque([(start_state, [])])
         self.visited.add(start_state)
@@ -20,6 +21,7 @@ class SokobanSolver:
 
             # Check win condition
             if boxes == self.initial_board.storages:
+                print (f"Total Iterations: {iteration}")
                 return path
 
             for move in 'LRUD':
@@ -30,6 +32,7 @@ class SokobanSolver:
                     if not self._corner_trap(new_boxes):
                         # Check if already visited state
                         if (new_pos, new_boxes) not in self.visited:
+                            iteration += 1
                             self.visited.add((new_pos, new_boxes))
                             queue.append(((new_pos, new_boxes), path + [move]))
 

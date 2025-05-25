@@ -1,5 +1,6 @@
 from Board import *
 from AI import SokobanSolver
+from time import time
 
 #/Users/kaydeereyes/PycharmProjects/CS175-Sokoban-AI/Sokoban-benchmarks/Sokoban/sokoban-01.txt
 if __name__ == '__main__':
@@ -27,22 +28,24 @@ if __name__ == '__main__':
 
         print("Game Won!")
     if version == 'BFS':
-        while not board.is_win():
-            solver = SokobanSolver(board)
-            path = solver.solve_BFS()
+        start = time()
+        solver = SokobanSolver(board)
+        path = solver.solve_BFS()
+        elapsed_time = time()-start
 
-            if not path:
-                print("No solution found.")
-            else:
-                print("\nSolution found!")
-                print("Moves:", ''.join(path))
-                print('\n')
+        if not path:
+            print("No solution found.")
+        else:
+            print("\nSolution found!")
+            print(f"Time to solve: {elapsed_time}s")
+            print("Moves:", ''.join(path))
+            print('\n')
+            board.print()
+            print('\n')
+            for move in path:
+                print(f"Move: {move}")
+                board.move(move)
                 board.print()
                 print('\n')
-                for move in path:
-                    print(f"Move: {move}")
-                    board.move(move)
-                    board.print()
-                    print('\n')
 
-                print("Game Won!")
+            print("Game Won!")

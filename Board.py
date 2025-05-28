@@ -52,6 +52,9 @@ class Board:
         self._initialize_data_members()
         self._initialize_game_board()
 
+        self._initial_boxes = set(self.boxes)
+        self._initial_player_pos = self.player_pos
+
     def _initialize_data_members(self) -> None:
         """
         Parses input file and initializes all data members other than board itself.
@@ -200,6 +203,20 @@ class Board:
                 return True
 
         return False
+
+    def reset(self) -> None:
+        """
+            Resets board back to original state.
+
+            Returns None
+        """
+
+        # Sets player position and box positions back to original state
+        self.player_pos = self._initial_player_pos
+        self.boxes = self._initial_boxes
+
+        # Rebuild game board with the reset state
+        self._initialize_game_board()
 
     ########### PRIVATE HELPERS ##########
     def _get_new_position(self, pos: Tuple[int, int], direction: str) -> Tuple[int, int]:

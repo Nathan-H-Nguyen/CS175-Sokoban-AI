@@ -1,7 +1,7 @@
 import heapq
 from Board import *
 import copy
-from Typing import Tuple, Set, FrozenSet
+from typing import Tuple, Set, FrozenSet
 
 class AStar:
     def __init__(self, board: Board):

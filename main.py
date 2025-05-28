@@ -32,7 +32,7 @@ if __name__ == '__main__':
         path = solver.solve()
         elapsed_time = time()-start
 
-        with open('BFS_Output.txt', 'a') as f:
+        with open('Output/BFS.txt', 'a') as f:
             f.write(f'Input File: {filename}\n\n')
             if not path:
                 f.write("No solution found.\n\n")
@@ -82,7 +82,7 @@ if __name__ == '__main__':
         path = solver.solve()
         elapsed_time = time()-start
         
-        with open('AStar_Output.txt', 'a') as f:
+        with open('Output/AStar.txt', 'a') as f:
             f.write(f'Input File: {filename}\n\n')
             if not path:
                 f.write("No solution found.\n\n")

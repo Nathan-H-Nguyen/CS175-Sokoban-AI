@@ -1,7 +1,7 @@
 from collections import deque
 from Board import *
 import copy
-from Typing import Tuple, Set, FrozenSet
+from typing import Tuple, Set, FrozenSet
 
 class BFS:
     def __init__(self, board: Board):

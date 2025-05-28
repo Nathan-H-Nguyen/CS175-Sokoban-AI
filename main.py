@@ -1,8 +1,8 @@
 from Board import *
-from AI import SokobanSolver
+from BFS import BFS
+from AStar import AStar
 from time import time
 
-#/Users/kaydeereyes/PycharmProjects/CS175-Sokoban-AI/Sokoban-benchmarks/Sokoban/sokoban-01.txt
 if __name__ == '__main__':
     if len(sys.argv) < 2:
         filename = "Sokoban-benchmarks/Sokoban/" + input("Enter the input path filename (e.g., 'input.txt'): ")
@@ -10,11 +10,10 @@ if __name__ == '__main__':
         filename = sys.argv[1]
     board = Board(filename)
 
-    version = input("Enter version type: ")
-
+    version = input("Enter version type (M, BFS, A*): ").upper()
 
     valid = {'L', 'R', 'U', 'D'}
-    version_valid = {'M', 'BFS'}
+    version_valid = {'M', 'BFS', 'A*'}
 
     if version == 'M':
         board.print()
@@ -27,25 +26,102 @@ if __name__ == '__main__':
             board.print()
 
         print("Game Won!")
-    if version == 'BFS':
+    elif version == 'BFS':
         start = time()
-        solver = SokobanSolver(board)
-        path = solver.solve_BFS()
+        solver = BFS(board)
+        path = solver.solve()
         elapsed_time = time()-start
 
-        if not path:
-            print("No solution found.")
-        else:
-            print("\nSolution found!")
-            print(f"Time to solve: {elapsed_time}s")
-            print("Moves:", ''.join(path))
-            print('\n')
-            board.print()
-            print('\n')
-            for move in path:
-                print(f"Move: {move}")
-                board.move(move)
-                board.print()
+        with open('Output/BFS.txt', 'a') as f:
+            f.write(f'Input File: {filename}\n\n')
+            if not path:
+                f.write("No solution found.\n\n")
+                f.write("#########################################################################################################################################################################")
+                f.write('\n\n')
+
+                print("No solution found.")
+            else:
+                f.write(f"Time to solve: {elapsed_time}s\n")
+                print(f"Time to solve: {elapsed_time}s")
+
+                f.write(f"Number of moves: {len(path)}\n")
+                print(f"Number of moves: {len(path)}")
+
+                moves = "Moves:" + ''.join(path)
+                f.write(moves + '\n')
+                print(moves)
+
+                f.write('\n\n')
                 print('\n')
 
-            print("Game Won!")
+                board.print_to_file(f)
+                board.print()
+
+                f.write('\n\n')
+                print('\n')
+                for move in path:
+                    f.write(f"Move: {move}\n")
+                    print(f"Move: {move}")
+
+                    board.move(move)
+
+                    board.print_to_file(f)
+                    board.print()
+
+                    f.write('\n\n')
+                    print('\n')
+
+                f.write("Game Won!\n\n")
+                f.write("#########################################################################################################################################################################")
+                f.write('\n\n')
+
+                print("Game Won!")
+    elif version == 'A*':
+        start = time()
+        solver = AStar(board)
+        path = solver.solve()
+        elapsed_time = time()-start
+        
+        with open('Output/AStar.txt', 'a') as f:
+            f.write(f'Input File: {filename}\n\n')
+            if not path:
+                f.write("No solution found.\n\n")
+                f.write("#########################################################################################################################################################################")
+                f.write('\n\n')
+                print("No solution found.")
+            else:
+                f.write(f"Time to solve: {elapsed_time}s\n")
+                print(f"Time to solve: {elapsed_time}s")
+
+                f.write(f"Number of moves: {len(path)}\n")
+                print(f"Number of moves: {len(path)}")
+
+                moves = "Moves:" + ''.join(path)
+                f.write(moves + '\n')
+                print(moves)
+
+                f.write('\n\n')
+                print('\n')
+
+                board.print_to_file(f)
+                board.print()
+
+                f.write('\n\n')
+                print('\n')
+                for move in path:
+                    f.write(f"Move: {move}\n")
+                    print(f"Move: {move}")
+
+                    board.move(move)
+
+                    board.print_to_file(f)
+                    board.print()
+
+                    f.write('\n\n')
+                    print('\n')
+
+                f.write("Game Won!\n\n")
+                f.write("#########################################################################################################################################################################")
+                f.write('\n\n')
+
+                print("Game Won!")

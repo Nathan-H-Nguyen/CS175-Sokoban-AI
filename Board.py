@@ -1,6 +1,6 @@
 import sys
 from collections import deque
-from typing import Set, Tuple
+from typing import Set, Tuple, TextIO
 
 
 class Board:
@@ -156,6 +156,23 @@ class Board:
                 line += col
             print(line)
 
+    def print_to_file(self, file: TextIO) -> None:
+        """
+        Prints out the current Board to the specified field
+
+        Args:
+            file (TextIO): File to write to
+
+        Returns:
+            None
+        """
+
+        for row in self.board:
+            line = ''
+            for col in row:
+                line += col
+            file.write(line + '\n')
+
     def box_corner_trap(self) -> bool:
         """
         Checks if any box is trapped in a corner and not on a storage location.
@@ -186,8 +203,16 @@ class Board:
 
     ########### PRIVATE HELPERS ##########
     def _get_new_position(self, pos: Tuple[int, int], direction: str) -> Tuple[int, int]:
-        #print("getnewposition")
-        """Calculate new position based on direction."""
+        """
+        Calculate new position based on direction.
+
+        Args:
+            pos (Tuple[int, int]): (x,y) Tuple representing the current position
+            direction (str): Direction to get new position
+        
+        Returns:
+            Tuple[int, int]: (x,y) Tuple representing new position in direction
+        """
         x, y = pos
         direction_map = {
             'L': (x, y - 1),
@@ -198,13 +223,28 @@ class Board:
         return direction_map[direction]
 
     def _is_valid_move(self, pos: Tuple[int, int]) -> bool:
-        #print("isvalid")
-        """Check if a position is valid for movement."""
+        """
+        Determines if current position is valid.
+
+        Args:
+            pos (Tuple[int, int]): (x,y) Tuple representing the current position
+        
+        Returns:
+            bool: True if position is valid, False otherwise
+        """
         return pos not in self.walls
 
     def _push_box(self, box_pos: Tuple[int, int], direction: str) -> bool:
-        #print("pushbox")
-        """Attempt to push a box in the given direction."""
+        """
+        Attempts to push box in given direction.
+
+        Args:
+            box_pos (Tuple[int, int]): (x,y) Tuple representing the box's position
+            direction (str): Direction to push box
+        
+        Returns:
+            bool: True if box was pushed, False otherwise
+        """
         new_box_pos = self._get_new_position(box_pos, direction)
 
         if not self._is_valid_move(new_box_pos):
@@ -219,8 +259,16 @@ class Board:
         return True
 
     def _update_position(self, old_pos: Tuple[int, int], new_pos: Tuple[int, int]) -> None:
-        #print("update pos")
-        """Update player position on the board."""
+        """
+        Updates player position on the board
+
+        Args:
+            old_pos (Tuple[int, int]): (x,y) Tuple representing the old player position
+            new_pos (Tuple[int, int]): (x,y) Tuple representing the new player position
+        
+        Returns:
+            None
+        """
         x, y = old_pos
         self.board[x][y] = (self.ELEMENTS['storage']
                             if old_pos in self.storages
@@ -231,8 +279,16 @@ class Board:
         self.board[x][y] = self.ELEMENTS['player']
 
     def _update_box_position(self, old_pos: Tuple[int, int], new_pos: Tuple[int, int]) -> None:
-        #print("update box pos")
-        """Update box position on the board."""
+        """
+        Updates box position on the board
+
+        Args:
+            old_pos (Tuple[int, int]): (x,y) Tuple representing the old box position
+            new_pos (Tuple[int, int]): (x,y) Tuple representing the new box position
+        
+        Returns:
+            None
+        """
         x, y = old_pos
         self.board[x][y] = (self.ELEMENTS['storage']
                             if old_pos in self.storages

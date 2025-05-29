@@ -1,5 +1,5 @@
 from Board import *
-import numpy as np
+import torch
 from typing import Tuple, FrozenSet
 
 class DQNEnv:
@@ -73,7 +73,7 @@ class DQNEnv:
 
         return (state, reward, info['done'], info)
     
-    def _get_state(self) -> np.ndarray:
+    def _get_state(self) -> torch.Tensor:
         """
         Gets the current state of the board in an "ingestable" way for DQN.
         The state will have 6 different values:
@@ -85,10 +85,10 @@ class DQNEnv:
             5 - Walls
         
         Returns:
-            np.ndarray: Flattened 1D vector to represent the state
+            torch.Tensor: Flattened 1D vector to represent the state
         """
         # Create np 2D Matrix for board state
-        state = np.zeros((self.board.rows, self.board.cols), dtype=int)
+        state = torch.zeros((self.board.rows, self.board.cols), dtype=torch.float32)
 
         # Set Player
         player_x, player_y = self.board.player_pos

@@ -1,3 +1,5 @@
+from DQNEnv import DQNEnv
+from Board import *
 import numpy as np
 import matplotlib.pyplot as plt
 from collections import deque, namedtuple
@@ -90,12 +92,13 @@ class ReplayMemory:
         return len(self.memory)
     
 class Agent:
-    def __init__(self, learning_rate: float, discount_factor: float, epsilon: float, 
+    def __init__(self, env: DQNEnv, learning_rate: float, discount_factor: float, epsilon: float, 
                 in_states: int, h1_nodes: int, h2_nodes: int, maxlen: int):
         """
         Initializes the AI Agent with provided hyper parameters and DQN info
 
         Args:
+            env (DQNEnv): Environment to act upon
             learning_rate (float): Alpha learning rate for optimizer
             discount_factor (float): Gamma discount factor for Q calculation
             epsilon (float): Epsilon-greedy action selection
@@ -104,6 +107,9 @@ class Agent:
             h2_nodes (int): Number of nodes in second hidden layer
             maxlen (int): Max length of ReplayMemory deque
         """
+        # Initialize Environment
+        self.env = env
+
         # Initialize Training Variables
         self.learning_rate = learning_rate # alpha
         self.discount_factor = discount_factor # gamma
@@ -121,3 +127,22 @@ class Agent:
 
         # Initialize Step Counter
         self.step_counter = 0
+    
+    def select_action(self, state: torch.Tensor) -> int:
+        """
+        Selects an action from the given state, random or best move
+
+        Args:
+            state (torch.Tensor): 1D Tensor representing state of board/environment
+
+        Returns:
+            int: Action to take (0123 maps to LRUD respectively)
+        """
+        self.step_counter += 1 # Increment step
+
+        # Epsilon-greedy policy to randomly decide on choosing random move or "best" move
+        if random.random() < self.epsilon:
+            return random.randint(0, 3) # 0123 => LRUD
+        else:
+            q_values = self.policy_dqn(state.unsqueeze(0)) # Get q values from output layer
+            return torch.argmax(q_values).item() # Return best move

@@ -157,6 +157,10 @@ class DQNEnv:
             if box not in new_boxes and box in self.board.storages:
                 reward -= 5
         
+        # Reward for pushing box
+        if old_boxes != new_boxes:
+            reward += 1
+
         # Penalty for moving to encourage solution with less moves
         reward -= 1
 

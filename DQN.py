@@ -10,10 +10,10 @@ from tqdm import trange
 from typing import List
 
 # Define Transition namedtuple
-Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'reward', 'done'))
+Transition = namedtuple('Transition', ('state', 'action', 'reward', 'next_state', 'done'))
 
 class DQN(nn.Module):
-    def __init__(self, in_states: int, h1_nodes: int, h2_nodes: int, out_actions: int):
+    def __init__(self, in_states: int, h1_nodes: int, h2_nodes: int):
         """
         Initializes the DQN object (Q-Network)
 
@@ -21,13 +21,12 @@ class DQN(nn.Module):
             in_states (int): Number of input
             h1_nodes (int): Number of nodes in first hidden layer
             h2_nodes (int): Number of nodes in second hidden layer
-            out_actions (int): Number of output
         """
         super().__init__()
 
         self.fc1 = nn.Linear(in_states, h1_nodes) # Input Layer
         self.fc2 = nn.Linear(h1_nodes, h2_nodes) # Hidden Layer
-        self.fc3 = nn.Linear(h2_nodes, out_actions) # Output Layer
+        self.fc3 = nn.Linear(h2_nodes, 4) # Output Layer
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -60,8 +59,8 @@ class ReplayMemory:
             transition (NamedTuple): A named tuple containing (state, action, next_state, reward, done), representing one step
                                         state: Previous state before taking action
                                         action: Action taken from state
-                                        next_state: New state after taking action
                                         reward: Reward from action
+                                        next_state: New state after taking action
                                         done: Indicates whether episode is done or not
         
         Returns:
@@ -89,3 +88,36 @@ class ReplayMemory:
             int: length of memory deque
         """
         return len(self.memory)
+    
+class Agent:
+    def __init__(self, learning_rate: float, discount_factor: float, epsilon: float, 
+                in_states: int, h1_nodes: int, h2_nodes: int, maxlen: int):
+        """
+        Initializes the AI Agent with provided hyper parameters and DQN info
+
+        Args:
+            learning_rate (float): Alpha learning rate for optimizer
+            discount_factor (float): Gamma discount factor for Q calculation
+            epsilon (float): Epsilon-greedy action selection
+            in_states (int): Size of input vector
+            h1_nodes (int): Number of nodes in first hidden layer
+            h2_nodes (int): Number of nodes in second hidden layer
+            maxlen (int): Max length of ReplayMemory deque
+        """
+        # Initialize Training Variables
+        self.learning_rate = learning_rate # alpha
+        self.discount_factor = discount_factor # gamma
+        self.epsilon = epsilon # epsilon-greedy
+
+        # Initialize DQN
+        self.policy_dqn = DQN(in_states, h1_nodes, h2_nodes)
+        self.target_dqn = DQN(in_states, h1_nodes, h2_nodes)
+
+        # Initialize ReplayMemory
+        self.memory = ReplayMemory(maxlen)
+
+        # Initialize Optimizer
+        self.optimizer = torch.optim.Adam(self.policy_dqn.parameters(), lr = learning_rate)
+
+        # Initialize Step Counter
+        self.step_counter = 0

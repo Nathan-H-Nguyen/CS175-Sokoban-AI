@@ -1,0 +1,163 @@
+from Board import *
+import numpy as np
+from typing import Tuple, FrozenSet
+
+class DQNEnv:
+    def __init__(self, board: Board, step_limit: int):
+        """
+        Initializes the environment wrapper that will be used for DQN.
+
+        Args:
+            board (Board): Board object.
+            step_limit (int): Number of steps/moves we allow before stopping episode
+
+        Returns:
+            None
+        """
+        self.board = board
+        self.step_count = 0
+        self.step_limit = step_limit
+
+        self.reset()
+    
+    def reset(self) -> np.ndarray:
+        """
+        Resets the environment and returns the state.
+
+        Returns:
+            np.ndarray: Flattened 1D vector state representation of board
+        """
+        self.board.reset()
+        self.step_count = 0
+        return self._get_state()
+    
+    def step(self, action: int):
+        move_mapping = {0: 'L',
+                        1: 'R',
+                        2: 'U',
+                        3: 'D'}
+        
+        # Get move and old player and box positions
+        move = move_mapping[action]
+        old_player = self.board.player_pos
+        old_boxes = frozenset(self.board.boxes)
+
+        # Make move and increment count
+        self.board.move(move)
+        self.step_count += 1
+
+        # Get new player and box positions
+        new_player = self.board.player_pos
+        new_boxes = frozenset(self.board.boxes)
+
+        # Calculate reward after making move
+        reward = self._calculate_reward(old_player, new_player, old_boxes, new_boxes)
+
+        # Get current state
+        state = self._get_state()
+
+        # Log info if needed
+        info = {"action": (action, move),
+                "step_count": self.step_count,
+                "moved": 1 if old_player != new_player else 0,
+                "invalid_move": 1 if old_player == new_player else 0,
+                "pushed_box": 1 if old_boxes != new_boxes else 0,
+                "reward": reward,
+                "done": new_boxes == self.board.storages or self.step_count >= self.step_limit,
+                "win": new_boxes == self.board.storages,
+                "player_pos": new_player, # Maybe use when visualizing?
+                "boxes_pos": new_boxes, # Maybe use when visualizing?
+                "num_boxes_on_storage": sum(box in self.board.storages for box in new_boxes),
+                "num_boxes_not_on_storage": sum(box not in self.board.storages for box in new_boxes),
+        }
+
+        return (state, reward, info['done'], info)
+    
+    def _get_state(self) -> np.ndarray:
+        """
+        Gets the current state of the board in an "ingestable" way for DQN.
+        The state will have 6 different values:
+            0 - Empty Squares
+            1 - Player
+            2 - Boxes
+            3 - Storage Locations
+            4 - Boxes on Storage Locations
+            5 - Walls
+        
+        Returns:
+            np.ndarray: Flattened 1D vector to represent the state
+        """
+        # Create np 2D Matrix for board state
+        state = np.zeros((self.board.rows, self.board.cols), dtype=int)
+
+        # Set Player
+        player_x, player_y = self.board.player_pos
+        state[player_x, player_y] = 1
+
+        # Get unassigned Boxes and unassigned Storages
+        unassigned_boxes = {box for box in self.board.boxes if box not in self.board.storages}
+        unassigned_storages = {storage for storage in self.board.storages if storage not in self.board.boxes}
+
+        # Set Boxes not on Storage Locations
+        for box_x, box_y in unassigned_boxes:
+            state[box_x, box_y] = 2
+        
+        # Set empty Storage Locations
+        for storage_x, storage_y in unassigned_storages:
+            state[storage_x, storage_y] = 3
+        
+        # Get assigned Boxes
+        assigned_boxes = self.board.boxes - unassigned_boxes
+
+        # Set Boxes on Storage Locations
+        for box_x, box_y in assigned_boxes:
+            state[box_x, box_y] = 4
+        
+        # Set Walls
+        for wall_x, wall_y in self.board.walls:
+            state[wall_x, wall_y] = 5
+        
+        # Flatten 2D Matrix into 1D vector for DQN input
+        return state.flatten()
+
+    def _calculate_reward(self, old_player: Tuple[int, int], new_player: Tuple[int, int], old_boxes: FrozenSet[Tuple[int, int]], new_boxes: FrozenSet[Tuple[int, int]]) -> int:
+        """
+        Calculates Reward after making a move.
+
+        Args:
+            old_player (Tuple[int, int]): (x, y) coordinates of player's old position
+            new_player (Tuple[int, int]): (x, y) coordinates of player's new position
+            old_boxes (FrozenSet[Tuple[int, int]]): Set of (x, y) Tuples representing position of boxes before
+                                                    move was made
+            new_boxes (FrozenSet[Tuple[int, int]]): Set of (x, y) Tuples representing position of boxes after
+                                                    move was made
+        
+        Returns:
+            int: Reward after move.
+        """
+        reward = 0
+
+        # FAT Reward for winning
+        if new_boxes == self.board.storages:
+            return 100
+        
+        # Penalty for invalid move
+        # i.e. tried to move in wall or push box that cant be pushed
+        if old_player == new_player:
+            return -10
+
+        # Reward for pushing Box onto Storage Location
+        for box in new_boxes:
+            if box not in old_boxes and box in self.board.storages:
+                reward += 10
+        
+        # Penalty for pushing Box off Storage Location
+        # Less than pushed onto bc sometimes you gotta push off to solve
+        for box in old_boxes:
+            if box not in new_boxes and box in self.board.storages:
+                reward -= 5
+        
+        # Penalty for moving to encourage solution with less moves
+        reward -= 1
+
+        return reward

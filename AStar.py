@@ -68,9 +68,23 @@ class AStar:
             int: Manhattan Distance of all boxes to storage locations
         """
         manhattan_distance = 0
-        for box in boxes:
-            manhattan_distance += min((abs(box[0] - storage[0]) + abs(box[1] - storage[1])) for storage in self.initial_board.storages)
-        
+
+        # Get boxes not on storages and empty storage locations
+        unassigned_boxes = {box for box in boxes if box not in self.initial_board.storages}
+        unassigned_storages = {storage for storage in self.initial_board.storages if storage not in boxes}
+
+        # Get boxes on storage locations
+        assigned_boxes = boxes - unassigned_boxes
+
+        # Calculate Manhattan distance for unassigned boxes and storages
+        if unassigned_storages:
+            for box in unassigned_boxes:
+                manhattan_distance += min((abs(box[0] - storage[0]) + abs(box[1] - storage[1])) for storage in unassigned_storages)
+
+            # Need to take in account boxes already on storages too (in the case we need to push a box on a storage to solve)
+            for box in assigned_boxes:
+                manhattan_distance += min((abs(box[0] - storage[0]) + abs(box[1] - storage[1])) for storage in unassigned_storages)
+            
         return manhattan_distance
 
     def _get_new_position(self, pos: Tuple[int, int], direction: str) -> Tuple[int, int]:

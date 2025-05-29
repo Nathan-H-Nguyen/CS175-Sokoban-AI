@@ -1,6 +1,5 @@
 from collections import deque
 from Board import *
-import copy
 from typing import Tuple, Set, FrozenSet
 
 class BFS:

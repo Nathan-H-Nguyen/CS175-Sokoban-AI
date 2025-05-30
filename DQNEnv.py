@@ -31,7 +31,24 @@ class DQNEnv:
         self.step_count = 0
         return self._get_state()
     
-    def step(self, action: int):
+    def step(self, action: int) -> Tuple[torch.Tensor, float, bool, Dict[str, object]]:
+        """
+        Performs an action in the environment and returns the relevant results
+
+        Args:
+            action (int): Action to be made on the board (0123 => LRUD respectively)
+        
+        Returns:
+            Tuple[torchTensor, float, bool, Dict[str, object]]: torch.Tensor
+                                                                    Flattened state of board
+                                                                float
+                                                                    Reward after action
+                                                                bool
+                                                                    Whether game is done or not
+                                                                Dict[str, object]
+                                                                    Info regarding move
+
+        """
         move_mapping = {0: 'L',
                         1: 'R',
                         2: 'U',

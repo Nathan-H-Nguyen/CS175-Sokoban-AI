@@ -249,7 +249,7 @@ class Agent:
             # Get Q-values from policy for current state
             policy_q_values = self.policy_dqn(state.unsqueeze(0))
             current_q = policy_q_values[0, action]
-            current_q_list.append(current_q)
+            current_q_list.append(current_q.unsqueeze(0))
 
             # Get Q-values from target for next state and compute target Q-value
             with torch.no_grad():
@@ -263,7 +263,7 @@ class Agent:
                     # Bellman Equation!
                     target = reward + (self.discount_factor * torch.max(target_q_values).item())
 
-                target_q_list.append(target)
+                target_q_list.append(torch.tensor(target))
 
         
         # Compute loss for batch

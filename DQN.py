@@ -123,6 +123,11 @@ class Agent:
         # Initialize DQN
         self.policy_dqn = DQN(in_states, h1_nodes, h2_nodes)
         self.target_dqn = DQN(in_states, h1_nodes, h2_nodes)
+
+        # Load previous training weights
+        if os.path.exists("dqn.pt"):
+            self.policy_dqn.load_state_dict(torch.load("dqn.pt"))
+
         self.target_dqn.load_state_dict(self.policy_dqn.state_dict())
 
         # Initialize ReplayMemory

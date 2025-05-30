@@ -20,12 +20,12 @@ class DQNEnv:
 
         self.reset()
     
-    def reset(self) -> np.ndarray:
+    def reset(self) -> torch.Tensor:
         """
         Resets the environment and returns the state.
 
         Returns:
-            np.ndarray: Flattened 1D vector state representation of board
+            torch.Tensor: Flattened 1D vector state representation of board
         """
         self.board.reset()
         self.step_count = 0

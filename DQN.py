@@ -263,7 +263,7 @@ class Agent:
                     # Bellman Equation!
                     target = reward + (self.discount_factor * torch.max(target_q_values).item())
 
-                target_q_list.append(torch.tensor(target))
+                target_q_list.append(torch.tensor([target]))
 
         
         # Compute loss for batch

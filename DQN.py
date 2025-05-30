@@ -8,7 +8,6 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 import os
-from tqdm import trange
 from typing import List
 
 # Define Transition namedtuple
@@ -123,18 +122,17 @@ class Agent:
         # Initialize DQN
         self.policy_dqn = DQN(in_states, h1_nodes, h2_nodes)
         self.target_dqn = DQN(in_states, h1_nodes, h2_nodes)
-
         # Load previous training weights
         if os.path.exists("dqn.pt"):
             self.policy_dqn.load_state_dict(torch.load("dqn.pt"))
-
         self.target_dqn.load_state_dict(self.policy_dqn.state_dict())
 
         # Initialize ReplayMemory
         self.memory = ReplayMemory(maxlen)
 
-        # Initialize Optimizer
+        # Initialize Optimizer and Loss Function
         self.optimizer = torch.optim.Adam(self.policy_dqn.parameters(), lr = learning_rate)
+        self.loss_fn = nn.MSELoss()
 
         # Initialize Step Counter
         self.step_counter = 0
@@ -234,3 +232,44 @@ class Agent:
         plt.tight_layout()
         plt.savefig("dqn_training_results.png")
         plt.close()
+
+    def optimize(self, batch: List[Transition]) -> None:
+        """
+        Optimizes policy dqn using batch from ReplayMemory
+
+        Args:
+            batch (List[Transition]): List of transitions sampled from memory
+        
+        Returns: None
+        """
+        current_q_list = []
+        target_q_list = []
+
+        for state, action, reward, next_state, done in batch:
+            # Get Q-values from policy for current state
+            policy_q_values = self.policy_dqn(state.unsqueeze(0))
+            current_q = policy_q_values[0, action]
+            current_q_list.append(current_q)
+
+            # Get Q-values from target for next state and compute target Q-value
+            with torch.no_grad():
+                # Get Q-values from target for next state
+                target_q_values = self.target_dqn(next_state.unsqueeze(0))
+
+                # Calculate target Q-value
+                if done:
+                    target = reward
+                else:
+                    # Bellman Equation!
+                    target = reward + (self.discount_factor * torch.max(target_q_values).item())
+
+                target_q_list.append(target)
+
+        
+        # Compute loss for batch
+        loss = self.loss_fn(torch.stack(current_q_list), torch.stack(target_q_list))
+
+        # Optimize model
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()

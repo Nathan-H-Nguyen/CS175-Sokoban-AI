@@ -262,7 +262,7 @@ class Board:
         """
         new_box_pos = self._get_new_position(box_pos, direction)
 
-        if not self._is_valid_move(new_box_pos):
+        if not self._is_valid_move(new_box_pos) or new_box_pos in self.boxes:
             return False
 
         # Update box position

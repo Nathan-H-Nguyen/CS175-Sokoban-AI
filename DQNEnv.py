@@ -1,20 +1,22 @@
 from Board import *
 import torch
-from typing import Tuple, FrozenSet
+from typing import Tuple, FrozenSet, Dict
 
 class DQNEnv:
-    def __init__(self, board: Board, step_limit: int):
+    def __init__(self, board: Board, max_size: int, step_limit: int):
         """
         Initializes the environment wrapper that will be used for DQN.
 
         Args:
             board (Board): Board object.
+            max_size (int): Max size of boards in training
             step_limit (int): Number of steps/moves we allow before stopping episode
 
         Returns:
             None
         """
         self.board = board
+        self.max_size = max_size
         self.step_count = 0
         self.step_limit = step_limit
 
@@ -80,8 +82,8 @@ class DQNEnv:
                 "invalid_move": 1 if old_player == new_player else 0,
                 "pushed_box": 1 if old_boxes != new_boxes else 0,
                 "reward": reward,
-                "done": new_boxes == self.board.storages or self.step_count >= self.step_limit,
-                "win": new_boxes == self.board.storages,
+                "done": self.board.is_win() or self.board.box_corner_trap() or self.step_count >= self.step_limit,
+                "win": self.board.is_win(),
                 "player_pos": new_player, # Maybe use when visualizing?
                 "boxes_pos": new_boxes, # Maybe use when visualizing?
                 "num_boxes_on_storage": sum(box in self.board.storages for box in new_boxes),
@@ -135,7 +137,14 @@ class DQNEnv:
             state[wall_x, wall_y] = 5
         
         # Flatten 2D Matrix into 1D vector for DQN input
-        return state.flatten()
+        flattened_state = state.flatten()
+        
+        # Zero Pad if needed
+        if flattened_state.numel() < self.max_size:
+            padding = torch.zeros(self.max_size - flattened_state.numel(), dtype=flattened_state.dtype)
+            flattened_state = torch.cat([flattened_state, padding])
+        
+        return flattened_state
 
     def _calculate_reward(self, old_player: Tuple[int, int], new_player: Tuple[int, int], old_boxes: FrozenSet[Tuple[int, int]], new_boxes: FrozenSet[Tuple[int, int]]) -> int:
         """
@@ -158,6 +167,10 @@ class DQNEnv:
         if new_boxes == self.board.storages:
             return 100
         
+        # Penalty for deadlock (box in corner) -20 for deadlock
+        if self.board.box_corner_trap():
+            return -20
+        
         # Penalty for invalid move
         # i.e. tried to move in wall or push box that cant be pushed
         if old_player == new_player:
@@ -172,13 +185,13 @@ class DQNEnv:
         # Less than pushed onto bc sometimes you gotta push off to solve
         for box in old_boxes:
             if box not in new_boxes and box in self.board.storages:
-                reward -= 5
+                reward -= 2.5
         
         # Reward for pushing box
         if old_boxes != new_boxes:
             reward += 1
 
         # Penalty for moving to encourage solution with less moves
-        reward -= 1
+        reward -= 0.10
 
         return reward

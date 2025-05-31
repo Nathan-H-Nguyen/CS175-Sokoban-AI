@@ -9,6 +9,7 @@ from torch import nn
 import torch.nn.functional as F
 import os
 from typing import List
+import math
 
 # Define Transition namedtuple
 Transition = namedtuple('Transition', ('state', 'action', 'reward', 'next_state', 'done'))
@@ -115,9 +116,15 @@ class Agent:
         # Initialize Training Variables
         self.learning_rate = learning_rate # alpha
         self.discount_factor = discount_factor # gamma
+
         self.epsilon = epsilon # epsilon-greedy
+        self.epsilon_min = 0.05
+        self.epsilon_half_life = 100_000
+        self.epsilon_step_counter = 0
+
         self.batch_size = batch_size
         self.sync_rate = sync_rate
+        self.sync_step_counter = 0
 
         # Initialize DQN
         self.policy_dqn = DQN(in_states, h1_nodes, h2_nodes)
@@ -133,9 +140,6 @@ class Agent:
         # Initialize Optimizer and Loss Function
         self.optimizer = torch.optim.Adam(self.policy_dqn.parameters(), lr = learning_rate)
         self.loss_fn = nn.MSELoss()
-
-        # Initialize Step Counter
-        self.step_counter = 0
     
     def select_action(self, state: torch.Tensor) -> int:
         """
@@ -147,7 +151,9 @@ class Agent:
         Returns:
             int: Action to take (0123 maps to LRUD respectively)
         """
-        self.step_counter += 1 # Increment step
+        # Increment step
+        self.sync_step_counter += 1
+        self.epsilon_step_counter += 1
 
         # Epsilon-greedy policy to randomly decide on choosing random move or "best" move
         if random.random() < self.epsilon:
@@ -156,6 +162,7 @@ class Agent:
             q_values = self.policy_dqn(state.unsqueeze(0)) # Get q values from output layer
             return torch.argmax(q_values).item() # Return best move
         
+    # Since were training across multiple levels we want to decay epsilon according to that, we do an exponential decay thing
     def train(self, episodes: int) -> None:
         """
         Trains the Agent on the level episodes amount of times, changing weights and optimizing as needed
@@ -174,6 +181,7 @@ class Agent:
             state = self.env.reset()
             done = False # True when puzzle is solved or exceeded step limit (in DNQEnv)
             accumulated_reward = 0
+            steps_to_finish = 0
 
             # While puzzle hasnt been solved and havent exceeded step limit
             while (not done):
@@ -183,6 +191,7 @@ class Agent:
                 # Make Action, get results
                 new_state, reward, done, info = self.env.step(action)
                 accumulated_reward += reward
+                steps_to_finish += 1
 
                 # Append Transition to Memory
                 transition = Transition(state, action, reward, new_state, done)
@@ -190,8 +199,15 @@ class Agent:
 
                 # Update State
                 state = new_state
+
+                # Exponential decay
+                self.epsilon = max(self.epsilon_min + (1.00 - self.epsilon_min) * math.exp(-self.epsilon_step_counter/self.epsilon_half_life), self.epsilon_min)
             
+            print(f'Episode {i} finished after: {steps_to_finish} steps')
+            # Track changes per episode
             rewards_per_episode[i] = accumulated_reward
+            epsilon_history[i] = self.epsilon
+            
 
             # Grab Sample Batch from Memory and Optimize
             if len(self.memory) >= self.batch_size:
@@ -199,13 +215,10 @@ class Agent:
                 self.optimize(batch)
 
                 # Sync policy_dqn and target_dqn
-                if self.step_counter >= self.sync_rate:
-                    self.step_counter = 0
+                if self.sync_step_counter >= self.sync_rate:
+                    self.sync_step_counter = 0
                     self.target_dqn.load_state_dict(self.policy_dqn.state_dict())
             
-            # Decay Epsilon
-            self.epsilon = max(self.epsilon - (1/episodes), 0)
-            epsilon_history[i] = self.epsilon
         
         # Save Policy
         torch.save(self.policy_dqn.state_dict(), 'dqn.pt')
@@ -217,7 +230,7 @@ class Agent:
         # Episode vs Accumulated Reward
         plt.subplot(1, 2, 1)
         plt.plot(rewards_per_episode)
-        plt.title("Accumulated Reward per Episode")
+        plt.title(f"{os.path.basename(self.env.board.file)}: Accumulated Reward per Episode")
         plt.xlabel("Episode")
         plt.ylabel("Accumulated Reward")
 
@@ -225,12 +238,13 @@ class Agent:
         # Episode vs Epsilon
         plt.subplot(1, 2, 2)
         plt.plot(epsilon_history)
-        plt.title("Epsilon Decay per Episode")
+        plt.title(f"{os.path.basename(self.env.board.file)}: Epsilon Decay per Episode")
         plt.xlabel("Episode")
         plt.ylabel("Epsilon")
 
         plt.tight_layout()
-        plt.savefig("dqn_training_results.png")
+        print(self.env.board.file)
+        plt.savefig(f"DQN_Training_Results_PNG/dqn_training_results_{os.path.basename(self.env.board.file)}.png")
         plt.close()
 
     def optimize(self, batch: List[Transition]) -> None:

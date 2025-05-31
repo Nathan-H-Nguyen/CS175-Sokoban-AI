@@ -39,19 +39,20 @@ class Board:
         self.num_walls = 0  # Total number of walls
         self.walls = set()  # Set containing tuples() of the (x,y) coordinates
 
-        self._initial_boxes = set() # Initial box locations
         self.num_boxes = 0  # Total number of boxes
         self.boxes = set()  # Set containing tuples() of the (x,y) coordinates
 
         self.num_storages = 0  # Total number of storage locations
         self.storages = set()  # Set containing tuples() of the (x,y) coordinates
 
-        self._initial_player_pos = tuple()  # Initial player (x,y) location
         self.player_pos = tuple()  # Current player (x,y) location
 
         # Initialize data members and board
         self._initialize_data_members()
         self._initialize_game_board()
+
+        self._initial_boxes = set(self.boxes) # Initial box locations
+        self._initial_player_pos = tuple(self.player_pos)  # Initial player (x,y) location
 
     def _initialize_data_members(self) -> None:
         """
@@ -72,10 +73,8 @@ class Board:
             self.rows, self.cols = map(int, content[0].split())
             self.num_walls, self.walls = decodeLine(content[1])
             self.num_boxes, self.boxes = decodeLine(content[2])
-            self._initial_boxes = set(self.boxes)
             self.num_storages, self.storages = decodeLine(content[3])
             x, y = map(int, content[4].split())
-            self._initial_player_pos = (x - 1, y - 1)
             self.player_pos = (x - 1, y - 1)
 
         except Exception as e:
@@ -105,7 +104,7 @@ class Board:
             self.board[x][y] = self.ELEMENTS['storage']
 
         # Place Player
-        self.board[self._initial_player_pos[0]][self._initial_player_pos[1]] = self.ELEMENTS['player']
+        self.board[self.player_pos[0]][self.player_pos[1]] = self.ELEMENTS['player']
 
     ########### PUBLIC METHODS ##########
     def move(self, direction: str) -> bool:
@@ -211,8 +210,8 @@ class Board:
         """
 
         # Sets player position and box positions back to original state
-        self.player_pos = self._initial_player_pos
-        self.boxes = self._initial_boxes
+        self.player_pos = tuple(self._initial_player_pos)
+        self.boxes = set(self._initial_boxes)
 
         # Rebuild game board with the reset state
         self._initialize_game_board()

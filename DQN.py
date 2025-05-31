@@ -204,6 +204,7 @@ class Agent:
                 self.epsilon = max(self.epsilon_min + (1.00 - self.epsilon_min) * math.exp(-self.epsilon_step_counter/self.epsilon_half_life), self.epsilon_min)
             
             print(f'Episode {i} finished after: {steps_to_finish} steps')
+            
             # Track changes per episode
             rewards_per_episode[i] = accumulated_reward
             epsilon_history[i] = self.epsilon

@@ -19,6 +19,7 @@ class DQNEnv:
         self.max_size = max_size
         self.step_count = 0
         self.step_limit = step_limit
+        self.invalid_move_streak = 0
 
         self.reset()
     
@@ -58,7 +59,7 @@ class DQNEnv:
         
         # Get move and old player and box positions
         move = move_mapping[action]
-        old_player = self.board.player_pos
+        old_player = set(self.board.player_pos)
         old_boxes = frozenset(self.board.boxes)
 
         # Make move and increment count
@@ -66,7 +67,7 @@ class DQNEnv:
         self.step_count += 1
 
         # Get new player and box positions
-        new_player = self.board.player_pos
+        new_player = set(self.board.player_pos)
         new_boxes = frozenset(self.board.boxes)
 
         # Calculate reward after making move
@@ -82,13 +83,19 @@ class DQNEnv:
                 "invalid_move": 1 if old_player == new_player else 0,
                 "pushed_box": 1 if old_boxes != new_boxes else 0,
                 "reward": reward,
-                "done": self.board.is_win() or self.board.box_corner_trap() or self.step_count >= self.step_limit,
+                "done": self.board.is_win() or self.board.box_corner_trap() or self.invalid_move_streak >= 10 or self.step_count >= self.step_limit,
                 "win": self.board.is_win(),
+                "corner_trap": self.board.box_corner_trap(),
+                "invalid_move_streak": self.invalid_move_streak >= 10,
+                "exceed_step_limit": self.step_count >= self.step_limit,
                 "player_pos": new_player, # Maybe use when visualizing?
                 "boxes_pos": new_boxes, # Maybe use when visualizing?
                 "num_boxes_on_storage": sum(box in self.board.storages for box in new_boxes),
                 "num_boxes_not_on_storage": sum(box not in self.board.storages for box in new_boxes),
         }
+
+        if info['invalid_move_streak']:
+            self.invalid_move_streak = 0
 
         return (state, reward, info['done'], info)
     
@@ -174,7 +181,10 @@ class DQNEnv:
         # Penalty for invalid move
         # i.e. tried to move in wall or push box that cant be pushed
         if old_player == new_player:
+            self.invalid_move_streak += 1
             return -10
+        else:
+            self.invalid_move_streak = 0
 
         # Reward for pushing Box onto Storage Location
         for box in new_boxes:

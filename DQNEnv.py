@@ -32,6 +32,7 @@ class DQNEnv:
         """
         self.board.reset()
         self.step_count = 0
+        self.invalid_move_streak = 0
         return self._get_state()
     
     def step(self, action: int) -> Tuple[torch.Tensor, float, bool, Dict[str, object]]:
@@ -59,7 +60,7 @@ class DQNEnv:
         
         # Get move and old player and box positions
         move = move_mapping[action]
-        old_player = set(self.board.player_pos)
+        old_player = tuple(self.board.player_pos)
         old_boxes = frozenset(self.board.boxes)
 
         # Make move and increment count
@@ -93,9 +94,6 @@ class DQNEnv:
                 "num_boxes_on_storage": sum(box in self.board.storages for box in new_boxes),
                 "num_boxes_not_on_storage": sum(box not in self.board.storages for box in new_boxes),
         }
-
-        if info['invalid_move_streak']:
-            self.invalid_move_streak = 0
 
         return (state, reward, info['done'], info)
     

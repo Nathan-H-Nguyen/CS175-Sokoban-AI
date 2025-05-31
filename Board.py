@@ -202,6 +202,38 @@ class Board:
 
         return False
 
+    def adjacent_box_trap(self) -> bool:
+        """
+        Checks if any adjacent boxes are trapped.
+
+        Returns:
+            bool: True if a box is trapped, else False
+        """
+        for box in self.boxes:
+            # If box in storage location skip, no need to check if trapped
+            if box in self.storages:
+                continue
+
+            # Get squares to the LRUD of box
+            left = self._get_new_position(box, 'L')
+            right = self._get_new_position(box, 'R')
+            up = self._get_new_position(box, 'U')
+            down = self._get_new_position(box, 'D')
+
+            # If box is along a wall (left or right), check if theres a box above or below it
+            if left in self.walls or right in self.walls:
+                # If theres a box above or below it then we are in a deadlock, return True
+                if up in self.boxes or down in self.boxes:
+                    return True
+            
+            # If box is along a wall (above or below), check if theres a box left or right of it
+            if up in self.walls or down in self.walls:
+                # If theres a box left or right of it then we are in a deadlock, return True
+                if left in self.boxes or right in self.boxes:
+                    return True
+
+        return False
+
     def reset(self) -> None:
         """
             Resets board back to original state.

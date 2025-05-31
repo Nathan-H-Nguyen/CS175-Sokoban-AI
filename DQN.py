@@ -178,10 +178,17 @@ class Agent:
 
         # Train for x episodes
         for i in range(episodes):
+            visualize = False
+            if i % 50 == 0:
+                visualize = True
+
             state = self.env.reset()
             done = False # True when puzzle is solved or exceeded step limit (in DNQEnv)
             accumulated_reward = 0
             steps_to_finish = 0
+
+            if visualize:
+                self.env.board.print()
 
             # While puzzle hasnt been solved and havent exceeded step limit
             while (not done):
@@ -193,6 +200,9 @@ class Agent:
                 accumulated_reward += reward
                 steps_to_finish += 1
 
+                if visualize:
+                    self.env.board.print()
+
                 # Append Transition to Memory
                 transition = Transition(state, action, reward, new_state, done)
                 self.memory.append(transition)
@@ -200,25 +210,26 @@ class Agent:
                 # Update State
                 state = new_state
 
-                # Exponential decay
-                self.epsilon = max(self.epsilon_min + (1.00 - self.epsilon_min) * math.exp(-self.epsilon_step_counter/self.epsilon_half_life), self.epsilon_min)
-            
-            print(f'Episode {i} finished after: {steps_to_finish} steps')
-            
-            # Track changes per episode
-            rewards_per_episode[i] = accumulated_reward
-            epsilon_history[i] = self.epsilon
-            
-
-            # Grab Sample Batch from Memory and Optimize
-            if len(self.memory) >= self.batch_size:
-                batch = self.memory.sample(self.batch_size)
-                self.optimize(batch)
+                # Grab Sample Batch from Memory and Optimize
+                if len(self.memory) >= self.batch_size:
+                    batch = self.memory.sample(self.batch_size)
+                    self.optimize(batch)
 
                 # Sync policy_dqn and target_dqn
                 if self.sync_step_counter >= self.sync_rate:
                     self.sync_step_counter = 0
                     self.target_dqn.load_state_dict(self.policy_dqn.state_dict())
+
+                # Exponential decay
+                self.epsilon = max(self.epsilon_min + (1.00 - self.epsilon_min) * math.exp(-self.epsilon_step_counter/self.epsilon_half_life), self.epsilon_min)
+            
+            print(f'Episode {i} finished after: {steps_to_finish} steps')
+            if steps_to_finish == self.env.step_limit:
+                self.env.board.print()
+            
+            # Track changes per episode
+            rewards_per_episode[i] = accumulated_reward
+            epsilon_history[i] = self.epsilon
             
         
         # Save Policy
@@ -249,42 +260,38 @@ class Agent:
         plt.close()
 
     def optimize(self, batch: List[Transition]) -> None:
-        """
-        Optimizes policy dqn using batch from ReplayMemory
+        states = []
+        actions = []
+        rewards = []
+        next_states = []
+        dones = []
 
-        Args:
-            batch (List[Transition]): List of transitions sampled from memory
+        for transition in batch:
+            states.append(transition.state)
+            actions.append(transition.action)
+            rewards.append(transition.reward)
+            next_states.append(transition.next_state)
+            dones.append(transition.done)
         
-        Returns: None
-        """
-        current_q_list = []
-        target_q_list = []
+        states = torch.stack(states)
+        actions = torch.tensor(actions, dtype=torch.long).unsqueeze(1)
+        rewards = torch.tensor(rewards, dtype=torch.float32).unsqueeze(1)
+        next_states = torch.stack(next_states)
+        dones = torch.tensor((dones), dtype=torch.bool).unsqueeze(1)
 
-        for state, action, reward, next_state, done in batch:
-            # Get Q-values from policy for current state
-            policy_q_values = self.policy_dqn(state.unsqueeze(0))
-            current_q = policy_q_values[0, action]
-            current_q_list.append(current_q.unsqueeze(0))
+        policy_q_values = self.policy_dqn(states) # Get all Q-values from policy
+        current_q = policy_q_values.gather(1, actions) # Get action specific Q-value
 
-            # Get Q-values from target for next state and compute target Q-value
-            with torch.no_grad():
-                # Get Q-values from target for next state
-                target_q_values = self.target_dqn(next_state.unsqueeze(0))
+        with torch.no_grad():
+            target_q_values   = self.target_dqn(next_states) # Get all Q-values from target
+            # GENIUS if the transition is done (True) for whatever reason, only use target, else (False) do entire bellman equation
+            targets  = rewards + (~dones) * self.discount_factor * target_q_values.max(1, keepdim=True)[0] # Get highest Q-value
 
-                # Calculate target Q-value
-                if done:
-                    target = reward
-                else:
-                    # Bellman Equation!
-                    target = reward + (self.discount_factor * torch.max(target_q_values).item())
-
-                target_q_list.append(torch.tensor([target]))
-
-        
         # Compute loss for batch
-        loss = self.loss_fn(torch.stack(current_q_list), torch.stack(target_q_list))
+        loss = self.loss_fn(current_q, targets)
 
-        # Optimize model
+        # Optimize
         self.optimizer.zero_grad()
         loss.backward()
+        torch.nn.utils.clip_grad_norm_(self.policy_dqn.parameters(), 5.0) # Prevents outliers messing up training
         self.optimizer.step()

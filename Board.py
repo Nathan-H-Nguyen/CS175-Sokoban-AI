@@ -263,7 +263,7 @@ class Board:
             if box in self.storages:
                 continue
             
-            if self.can_push_box(box):
+            if self._can_push_box(box):
                 return False
         
         return True

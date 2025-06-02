@@ -122,7 +122,7 @@ class Agent:
         # Use these for training on Easy, change when training on other levels
         self.epsilon_start = epsilon
         self.epsilon_min = 0.05
-        self.epsilon_half_life = 50_000
+        self.epsilon_half_life = 250_000
         self.epsilon_step_counter = 0
 
         self.batch_size = batch_size

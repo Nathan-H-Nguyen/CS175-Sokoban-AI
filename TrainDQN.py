@@ -23,19 +23,19 @@ if __name__ == '__main__':
     hard_levels = list(os.listdir(hard_path))
 
     # Get Training and Test Levels
-    random.shuffle(easy_levels) # Randomize
+    #random.shuffle(easy_levels) # Randomize
     easy_len = len(easy_levels)
     easy_split = int(easy_len*0.80)
     easy_train = easy_levels[:easy_split] # 80% Train
     easy_test = easy_levels[easy_split:] # 20% Test
 
-    random.shuffle(medium_levels) # Randomize
+    #random.shuffle(medium_levels) # Randomize
     medium_len = len(medium_levels)
     medium_split = int(medium_len*0.80)
     medium_train = medium_levels[:medium_split] # 80% Train
     medium_test = medium_levels[medium_split:] # 20% Test
 
-    random.shuffle(hard_levels) # Randomize
+    #random.shuffle(hard_levels) # Randomize
     hard_len = len(hard_levels)
     hard_split = int(hard_len*0.80)
     hard_train = hard_levels[:hard_split] # 80% Train
@@ -63,7 +63,7 @@ if __name__ == '__main__':
             board = Board(easy_path + '/' + level)
             env = DQNEnv(board, max_size, 200 + 50*board.num_boxes)
             agent.env = env
-            agent.train(100)
+            agent.train(500)
 
             f.write(f'{level}:\n')
             f.write(f'\tTime to train: {time.time()-level_start}s\n')
@@ -77,10 +77,10 @@ if __name__ == '__main__':
         agent.epsilon = 0.20
         agent.epsilon_start = 0.20
         agent.epsilon_min = 0.05
-        agent.epsilon_half_life = 100_000
+        agent.epsilon_half_life = 750_000
         agent.epsilon_step_counter = 0
 
-        random.shuffle(easy_train) # Reshuffle training levels again (since we alr ran through it previously)
+        #random.shuffle(easy_train) # Reshuffle training levels again (since we alr ran through it previously)
         easy_index = 0
         medium_index = 0
         for i in range(easy_len+medium_len):
@@ -99,7 +99,7 @@ if __name__ == '__main__':
                 board = Board(easy_path + '/' + easy_train[easy_index])
                 env = DQNEnv(board, max_size, 200 + 50*board.num_boxes)
                 agent.env = env
-                agent.train(150)
+                agent.train(500)
 
                 f.write(f'{easy_train[easy_index]}:\n')
                 f.write(f'\tTime to train: {time.time()-level_start}s\n')
@@ -111,7 +111,7 @@ if __name__ == '__main__':
                 board = Board(medium_path + '/' + medium_train[medium_index])
                 env = DQNEnv(board, max_size, 300 + 75*board.num_boxes)
                 agent.env = env
-                agent.train(150)
+                agent.train(500)
 
                 f.write(f'{medium_train[medium_index]}:\n')
                 f.write(f'\tTime to train: {time.time()-level_start}s\n')
@@ -124,10 +124,10 @@ if __name__ == '__main__':
         agent.epsilon = 0.30
         agent.epsilon_start = 0.30
         agent.epsilon_min = 0.05
-        agent.epsilon_half_life = 200_000
+        agent.epsilon_half_life = 1_000_000
         agent.epsilon_step_counter = 0
 
-        random.shuffle(medium_train) # Reshuffle training levels again (since we alr ran through it previously)
+        #random.shuffle(medium_train) # Reshuffle training levels again (since we alr ran through it previously)
         medium_index = 0
         hard_index = 0
         for i in range(medium_len+hard_len):
@@ -146,7 +146,7 @@ if __name__ == '__main__':
                 board = Board(medium_path + '/' + medium_train[medium_index])
                 env = DQNEnv(board, max_size, 300 + 75*board.num_boxes)
                 agent.env = env
-                agent.train(200)
+                agent.train(500)
 
                 f.write(f'{medium_train[medium_index]}:\n')
                 f.write(f'\tTime to train: {time.time()-level_start}s\n')
@@ -158,7 +158,7 @@ if __name__ == '__main__':
                 board = Board(hard_path + '/' + hard_train[hard_index])
                 env = DQNEnv(board, max_size, 500 + 100*board.num_boxes)
                 agent.env = env
-                agent.train(200)
+                agent.train(500)
 
                 f.write(f'{hard_train[hard_index]}:\n')
                 f.write(f'\tTime to train: {time.time()-level_start}s\n')

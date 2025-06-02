@@ -4,12 +4,13 @@ import time
 # Medium => 10x10 World with 4 boxes
 # Hard => >10x10 World with 5 boxes or more
 
-def input_to_sokoban(filename: str) -> None:
+def input_to_sokoban(filename: str, folder: str) -> None:
     """
     Takes a file and turns it into a Sokoban file valid for input
 
     Args:
         filename (str): Filename/path
+        folder (str): Folder to store level
     
     Returns:
         None
@@ -31,7 +32,7 @@ def input_to_sokoban(filename: str) -> None:
     board = []
 
     # Turn representation into 2D matrix
-    with open(f'Train/Input/{filename}', 'r') as f:
+    with open(f'Train/Input/{folder}/{filename}', 'r') as f:
         lines = f.readlines()
         for line in lines:
             board.append(list(line.rstrip('\n')))
@@ -71,7 +72,7 @@ def input_to_sokoban(filename: str) -> None:
         print(''.join(row_char))
     
     # Create valid input file
-    with open(f'Train/Sokoban/sokoban-{filename}', 'w') as f:
+    with open(f'Train/Sokoban/{folder}/sokoban-{filename}', 'w') as f:
         # First line: rows cols
         f.write(f'{rows} {cols}\n')
 
@@ -97,9 +98,18 @@ def input_to_sokoban(filename: str) -> None:
         f.write(f'{player[0]} {player[1]}')
     
 if __name__ == '__main__':
-    input_path = os.path.join(os.getcwd(), 'Train/Input')
+    easy_path = os.path.join(os.getcwd(), 'Train/Input/Easy')
+    medium_path = os.path.join(os.getcwd(), 'Train/Input/Medium')
+    hard_path = os.path.join(os.getcwd(), 'Train/Input/Hard')
     
-    for file in os.listdir(input_path):
+    for file in os.listdir(easy_path):
         print(f'FILE: {file}')
-        input_to_sokoban(file)
-        time.sleep(1)
+        input_to_sokoban(file, 'Easy')
+    
+    for file in os.listdir(medium_path):
+        print(f'FILE: {file}')
+        input_to_sokoban(file, 'Medium')
+
+    for file in os.listdir(hard_path):
+        print(f'FILE: {file}')
+        input_to_sokoban(file, 'Hard')

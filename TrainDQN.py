@@ -53,7 +53,7 @@ if __name__ == '__main__':
                     in_states=max_size, h1_nodes=128, h2_nodes=128, maxlen=30_000)
 
     """==================== TRAINING ===================="""
-    with open('Training_Results.txt', 'w') as f:
+    with open('Training_Results.txt', 'a') as f:
         total_start = time.time()
         # EASY TRAINING
         f.write('====================EASY TRAINING====================\n')
@@ -172,7 +172,7 @@ if __name__ == '__main__':
     # TESTING DONE HOPEFULLY WE GOT GOOD RESULTS LETS TEST ON THE OTHER 20%
     agent.policy_dqn.load_state_dict(torch.load('dqn.pt'))
     agent.target_dqn.load_state_dict(agent.policy_dqn.state_dict())
-    with open('Test_Results.txt', 'w') as f:
+    with open('Test_Results.txt', 'a') as f:
         f.write('====================EASY TEST RESULTS====================\n')
         print('====================EASY TEST RESULTS====================')
         for level in easy_test:

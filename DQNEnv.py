@@ -84,7 +84,7 @@ class DQNEnv:
                 "invalid_move": 1 if old_player == new_player else 0,
                 "pushed_box": 1 if old_boxes != new_boxes else 0,
                 "reward": reward,
-                "done": self.board.is_win() or self.board.box_corner_trap() or self.invalid_move_streak >= 10 or self.step_count >= self.step_limit,
+                "done": self.board.is_win() or self.board.box_corner_trap() or self.board.unpushable_boxes_trap() or self.invalid_move_streak >= 10 or self.step_count >= self.step_limit,
                 "win": self.board.is_win(),
                 "corner_trap": self.board.box_corner_trap(),
                 "invalid_move_streak": self.invalid_move_streak >= 10,

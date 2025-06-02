@@ -221,15 +221,29 @@ class Board:
             down = self._get_new_position(box, 'D')
 
             # If box is along a wall (left or right), check if theres a box above or below it
-            if left in self.walls or right in self.walls:
-                # If theres a box above or below it then we are in a deadlock, return True
-                if up in self.boxes or down in self.boxes:
+            # And if that box is along the same wall
+            if left in self.walls:
+                if up in self.boxes and self._get_new_position(up, 'L') in self.walls:
                     return True
-            
+                elif down in self.boxes and self._get_new_position(down, 'L') in self.walls:
+                    return True
+            if right in self.walls:
+                if up in self.boxes and self._get_new_position(up, 'R') in self.walls:
+                    return True
+                elif down in self.boxes and self._get_new_position(down, 'R') in self.walls:
+                    return True
+
             # If box is along a wall (above or below), check if theres a box left or right of it
-            if up in self.walls or down in self.walls:
-                # If theres a box left or right of it then we are in a deadlock, return True
-                if left in self.boxes or right in self.boxes:
+            # And if that box is along the same wall
+            if up in self.walls:
+                if left in self.boxes and self._get_new_position(left, 'U') in self.walls:
+                    return True
+                elif right in self.boxes and self._get_new_position(right, 'U') in self.walls:
+                    return True
+            if down in self.walls:
+                if left in self.boxes and self._get_new_position(left, 'D') in self.walls:
+                    return True
+                elif right in self.boxes and self._get_new_position(right, 'D') in self.walls:
                     return True
 
         return False

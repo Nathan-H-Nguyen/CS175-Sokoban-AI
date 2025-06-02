@@ -225,27 +225,27 @@ class Board:
             # If box is along a wall (left or right), check if theres a box above or below it
             # And if that box is along the same wall
             if left in self.walls:
-                if up in self.boxes and not self._can_push_box(up):
+                if up in self.boxes and not self._recursive_can_push_box(up, set()):
                     return True
-                elif down in self.boxes and not self._can_push_box(down):
+                elif down in self.boxes and not self._recursive_can_push_box(down, set()):
                     return True
             if right in self.walls:
-                if up in self.boxes and not self._can_push_box(up):
+                if up in self.boxes and not self._recursive_can_push_box(up, set()):
                     return True
-                elif down in self.boxes and not self._can_push_box(down):
+                elif down in self.boxes and not self._recursive_can_push_box(down, set()):
                     return True
 
             # If box is along a wall (above or below), check if theres a box left or right of it
             # And if that box is along the same wall
             if up in self.walls:
-                if left in self.boxes and not self._can_push_box(left):
+                if left in self.boxes and not self._recursive_can_push_box(left, set()):
                     return True
-                elif right in self.boxes and not self._can_push_box(right):
+                elif right in self.boxes and not self._recursive_can_push_box(right, set()):
                     return True
             if down in self.walls:
-                if left in self.boxes and not self._can_push_box(left):
+                if left in self.boxes and not self._recursive_can_push_box(left, set()):
                     return True
-                elif right in self.boxes and not self._can_push_box(right):
+                elif right in self.boxes and not self._recursive_can_push_box(right, set()):
                     return True
 
         return False
@@ -404,6 +404,38 @@ class Board:
             # If push to square and push from square are empty, we can push!
             if push_to not in self.walls and push_to not in self.boxes:
                 if push_from not in self.walls and push_from not in self.boxes:
+                    return True
+        
+        return False
+
+    def _recursive_can_push_box(self, box: Tuple[int, int], visited: Set[Tuple[int, int]]) -> bool:
+        """
+        Recurisvely check if box and its neighbors (if boxes) can be pushed
+
+        Args:
+            box (Tuple[int, int]): Current box we are checking
+            visited (Set[Tuple[int, int]]): Boxes we've already visited
+        
+        Returns:
+            bool: True if any box and/or its neighbors can be pushed, False otherwise
+        """
+        # Base case, if box already visited skip
+        if box in visited:
+            return False
+        visited.add(box)
+
+        # Base case, if we can push box return true
+        if self._can_push_box(box):
+            return True
+        
+        # Can't push box, check boxes around and see if they can be pushed
+        for direction in 'LRUD':
+            adjacent = self._get_new_position(box, direction)
+            if adjacent in self.walls:
+                continue
+
+            if adjacent in self.boxes:
+                if self._recursive_can_push_box(adjacent, visited):
                     return True
         
         return False

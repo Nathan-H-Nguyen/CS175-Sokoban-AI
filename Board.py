@@ -44,12 +44,14 @@ class Board:
 
         self.num_storages = 0  # Total number of storage locations
         self.storages = set()  # Set containing tuples() of the (x,y) coordinates
+        self.corner_storages = set() # Set containing tuples() of the (x,y) coordinates of storages in corners
 
         self.player_pos = tuple()  # Current player (x,y) location
 
         # Initialize data members and board
         self._initialize_data_members()
         self._initialize_game_board()
+        self._initialize_corner_storages()
 
         self._initial_boxes = set(self.boxes) # Initial box locations
         self._initial_player_pos = tuple(self.player_pos)  # Initial player (x,y) location
@@ -106,6 +108,27 @@ class Board:
         # Place Player
         self.board[self.player_pos[0]][self.player_pos[1]] = self.ELEMENTS['player']
 
+    def _initialize_corner_storages(self) -> None:
+        """
+        Initiailizes the corner_storages data member
+
+        Returns:
+            None
+        """
+        for storage in self.storages:
+            left = self._get_new_position(storage, 'L')
+            right = self._get_new_position(storage, 'R')
+            up = self._get_new_position(storage, 'U')
+            down = self._get_new_position(storage, 'D')
+
+            if up in self.walls and right in self.walls:  # Top right corner
+                self.corner_storages.add(storage)
+            elif right in self.walls and down in self.walls:  # Bottom right corner
+                self.corner_storages.add(storage)
+            elif down in self.walls and left in self.walls:  # Bottom left corner
+                self.corner_storages.add(storage)
+            elif left in self.walls and up in self.walls:  # Top left corner
+                self.corner_storages.add(storage)
     ########### PUBLIC METHODS ##########
     def move(self, direction: str) -> bool:
         """

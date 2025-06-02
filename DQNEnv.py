@@ -190,6 +190,10 @@ class DQNEnv:
         for box in new_boxes:
             if box not in old_boxes and box in self.board.storages:
                 reward += 10.0
+
+                # Bonus reward for pushing into corner storage
+                if box in self.board.corner_storages:
+                    reward += 10.0
         
         # Penalty for pushing Box off Storage Location
         # Less than pushed onto bc sometimes you gotta push off to solve

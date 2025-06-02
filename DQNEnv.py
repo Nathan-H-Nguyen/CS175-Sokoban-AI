@@ -88,7 +88,7 @@ class DQNEnv:
                 "win": self.board.is_win(),
                 "corner_trap": self.board.box_corner_trap(),
                 "adjacent_box_trap": self.board.adjacent_box_trap(),
-                "unpushable_box_trap": self.board.unpushable_box_trap(),
+                "unpushable_box_trap": self.board.unpushable_boxes_trap(),
                 "invalid_move_streak": self.invalid_move_streak >= 10,
                 "exceed_step_limit": self.step_count >= self.step_limit,
                 "player_pos": new_player, # Maybe use when visualizing?

@@ -151,7 +151,7 @@ class DQNEnv:
         
         return flattened_state
 
-    def _calculate_reward(self, old_player: Tuple[int, int], new_player: Tuple[int, int], old_boxes: FrozenSet[Tuple[int, int]], new_boxes: FrozenSet[Tuple[int, int]]) -> int:
+    def _calculate_reward(self, old_player: Tuple[int, int], new_player: Tuple[int, int], old_boxes: FrozenSet[Tuple[int, int]], new_boxes: FrozenSet[Tuple[int, int]]) -> float:
         """
         Calculates Reward after making a move.
 
@@ -164,30 +164,30 @@ class DQNEnv:
                                                     move was made
         
         Returns:
-            int: Reward after move.
+            float: Reward after move.
         """
         reward = 0
 
         # FAT Reward for winning
         if new_boxes == self.board.storages:
-            return 100
+            return 100.0
         
-        # Penalty for deadlock (box in corner) -20 for deadlock
-        if self.board.box_corner_trap():
-            return -20
+        # Penalty for deadlock -20
+        if self.board.box_corner_trap() or self.board.adjacent_box_trap() or self.board.unpushable_boxes_trap():
+            return -20.0
         
         # Penalty for invalid move
         # i.e. tried to move in wall or push box that cant be pushed
         if old_player == new_player:
             self.invalid_move_streak += 1
-            return -10
+            return -10.0
         else:
             self.invalid_move_streak = 0
 
         # Reward for pushing Box onto Storage Location
         for box in new_boxes:
             if box not in old_boxes and box in self.board.storages:
-                reward += 10
+                reward += 10.0
         
         # Penalty for pushing Box off Storage Location
         # Less than pushed onto bc sometimes you gotta push off to solve
@@ -197,7 +197,7 @@ class DQNEnv:
         
         # Reward for pushing box
         if old_boxes != new_boxes:
-            reward += 1
+            reward += 1.0
 
         # Penalty for moving to encourage solution with less moves
         reward -= 0.10

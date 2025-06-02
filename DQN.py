@@ -8,7 +8,7 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 import os
-from typing import List
+from typing import List, Dict
 import math
 
 # Define Transition namedtuple
@@ -117,9 +117,12 @@ class Agent:
         self.learning_rate = learning_rate # alpha
         self.discount_factor = discount_factor # gamma
 
+        # Epsilon stuff
         self.epsilon = epsilon # epsilon-greedy
+        # Use these for training on Easy, change when training on other levels
+        self.epsilon_start = epsilon
         self.epsilon_min = 0.05
-        self.epsilon_half_life = 100_000
+        self.epsilon_half_life = 50_000
         self.epsilon_step_counter = 0
 
         self.batch_size = batch_size
@@ -178,17 +181,17 @@ class Agent:
 
         # Train for x episodes
         for i in range(episodes):
-            visualize = False
-            if i % 50 == 0:
-                visualize = True
+            # visualize = False
+            # if i % 50 == 0:
+            #     visualize = True
 
             state = self.env.reset()
             done = False # True when puzzle is solved or exceeded step limit (in DNQEnv)
             accumulated_reward = 0
             steps_to_finish = 0
 
-            if visualize:
-                self.env.board.print()
+            # if visualize:
+            #     self.env.board.print()
 
             # While puzzle hasnt been solved and havent exceeded step limit
             while (not done):
@@ -200,8 +203,8 @@ class Agent:
                 accumulated_reward += reward
                 steps_to_finish += 1
 
-                if visualize:
-                    self.env.board.print()
+                # if visualize:
+                #     self.env.board.print()
 
                 # Append Transition to Memory
                 transition = Transition(state, action, reward, new_state, done)
@@ -221,9 +224,9 @@ class Agent:
                     self.target_dqn.load_state_dict(self.policy_dqn.state_dict())
 
                 # Exponential decay
-                self.epsilon = max(self.epsilon_min + (1.00 - self.epsilon_min) * math.exp(-self.epsilon_step_counter/self.epsilon_half_life), self.epsilon_min)
+                self.epsilon = max(self.epsilon_min + (self.epsilon_start - self.epsilon_min) * math.exp(-self.epsilon_step_counter/self.epsilon_half_life), self.epsilon_min)
             
-            print(f'Episode {i} finished after: {steps_to_finish} steps')
+            print(f'{os.path.basename(self.env.board.file)} - Episode {i} finished after: {steps_to_finish} steps')
             if steps_to_finish == self.env.step_limit:
                 self.env.board.print()
             
@@ -295,3 +298,41 @@ class Agent:
         loss.backward()
         torch.nn.utils.clip_grad_norm_(self.policy_dqn.parameters(), 5.0) # Prevents outliers messing up training
         self.optimizer.step()
+
+    def test(self, board: Board, max_size: int, step_limit: int) -> Dict[str, object]:
+        """
+        Runs a greedy episode on the given level
+
+        Args:
+            board (Board): Board object of level
+            max_size (int): Max size of the environment
+            step_limit (int): Max number of steps allowed for the given level
+        
+        Returns:
+            Dict[str, object]: Dict containing info regarding the test
+        """
+        env = DQNEnv(board, max_size, step_limit)
+        self.env = env
+
+        prev_epsilon = self.epsilon
+        self.epsilon = 0.0 # Force greedy action
+
+        state = env.reset()
+        accumulated_reward = 0
+        total_steps = 0
+        done = False
+        actions = []
+
+        while not done and total_steps < step_limit:
+            action = self.select_action(state) # Get move
+            actions.append(action)
+            next_state, reward, done, info = env.step(action) # Make Move
+
+            # Update metrics
+            accumulated_reward += reward
+            total_steps += 1
+            state = next_state
+        
+        self.epsilon = prev_epsilon
+
+        return {'win': info['win'], 'total_steps': total_steps, 'accumulated_reward': accumulated_reward, 'actions': actions}

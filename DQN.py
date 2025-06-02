@@ -143,6 +143,8 @@ class Agent:
         # Initialize Optimizer and Loss Function
         self.optimizer = torch.optim.Adam(self.policy_dqn.parameters(), lr = learning_rate)
         self.loss_fn = nn.MSELoss()
+
+        self.train_count = 1
     
     def select_action(self, state: torch.Tensor) -> int:
         """
@@ -259,8 +261,10 @@ class Agent:
 
         plt.tight_layout()
         print(self.env.board.file)
-        plt.savefig(f"DQN_Training_Results_PNG/dqn_training_results_{os.path.basename(self.env.board.file)}.png")
+        plt.savefig(f"DQN_Training_Results_PNG/dqn_training_results_{self.train_count}_{os.path.basename(self.env.board.file)}.png")
         plt.close()
+
+        self.train_count += 1
 
     def optimize(self, batch: List[Transition]) -> None:
         states = []

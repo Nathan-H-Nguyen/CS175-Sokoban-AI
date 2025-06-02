@@ -225,27 +225,27 @@ class Board:
             # If box is along a wall (left or right), check if theres a box above or below it
             # And if that box is along the same wall
             if left in self.walls:
-                if up in self.boxes and self._get_new_position(up, 'L') in self.walls:
+                if up in self.boxes and not self._can_push_box(up):
                     return True
-                elif down in self.boxes and self._get_new_position(down, 'L') in self.walls:
+                elif down in self.boxes and not self._can_push_box(down):
                     return True
             if right in self.walls:
-                if up in self.boxes and self._get_new_position(up, 'R') in self.walls:
+                if up in self.boxes and not self._can_push_box(up):
                     return True
-                elif down in self.boxes and self._get_new_position(down, 'R') in self.walls:
+                elif down in self.boxes and not self._can_push_box(down):
                     return True
 
             # If box is along a wall (above or below), check if theres a box left or right of it
             # And if that box is along the same wall
             if up in self.walls:
-                if left in self.boxes and self._get_new_position(left, 'U') in self.walls:
+                if left in self.boxes and not self._can_push_box(left):
                     return True
-                elif right in self.boxes and self._get_new_position(right, 'U') in self.walls:
+                elif right in self.boxes and not self._can_push_box(right):
                     return True
             if down in self.walls:
-                if left in self.boxes and self._get_new_position(left, 'D') in self.walls:
+                if left in self.boxes and not self._can_push_box(left):
                     return True
-                elif right in self.boxes and self._get_new_position(right, 'D') in self.walls:
+                elif right in self.boxes and not self._can_push_box(right):
                     return True
 
         return False

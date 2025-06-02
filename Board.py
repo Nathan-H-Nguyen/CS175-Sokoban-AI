@@ -174,6 +174,7 @@ class Board:
                 line += col
             file.write(line + '\n')
 
+    # Deadlock check
     def box_corner_trap(self) -> bool:
         """
         Checks if any box is trapped in a corner and not on a storage location.
@@ -202,6 +203,7 @@ class Board:
 
         return False
 
+    # Deadlock Check
     def adjacent_box_trap(self) -> bool:
         """
         Checks if any adjacent boxes are trapped.
@@ -247,6 +249,24 @@ class Board:
                     return True
 
         return False
+
+    # Deadlock Check
+    def unpushable_boxes_trap(self) -> bool:
+        """
+        Checks if all boxes not on a storage are unpushable
+
+        Returns:
+            bool: True if all boxes not on storages are unpushable, otherwise False
+        """
+        for box in self.boxes:
+            # If box is on a storage ignore it
+            if box in self.storages:
+                continue
+            
+            if self.can_push_box(box):
+                return False
+        
+        return True
 
     def reset(self) -> None:
         """
@@ -357,3 +377,33 @@ class Board:
 
         x, y = new_pos
         self.board[x][y] = self.ELEMENTS['box']
+
+    # Deadlock Check Helper
+    def _can_push_box(self, box: Tuple[int, int]) -> bool:
+        """
+        Checks if a box can be pushed in ANY direction
+
+        Args:
+            box (Tuple[int, int]): box to check if pushable
+        
+        Returns:
+            bool: True if can be pushed, False otherwise
+        """
+        opposite_direction = {
+                                'L': 'R',
+                                'R': 'L',
+                                'U': 'D',
+                                'D': 'U',
+                            }
+        
+        # Check if box can be pushed from any direction
+        for direction in 'LRUD':
+            push_to = self._get_new_position(box, direction) # Get square in front of box (push to)
+            push_from = self._get_new_position(box, opposite_direction[direction]) # Get square behind box (push from)
+
+            # If push to square and push from square are empty, we can push!
+            if push_to not in self.walls and push_to not in self.boxes:
+                if push_from not in self.walls and push_from not in self.boxes:
+                    return True
+        
+        return False

@@ -80,43 +80,31 @@ if __name__ == '__main__':
         agent.epsilon_half_life = 750_000
         agent.epsilon_step_counter = 0
 
-        #random.shuffle(easy_train) # Reshuffle training levels again (since we alr ran through it previously)
-        easy_index = 0
-        medium_index = 0
-        for i in range(easy_len+medium_len):
-            easy_flag = False
-            medium_flag = False
+        #Combine easy and medium levels together then shuffle
+        easy_combine = [{'difficulty': 'easy', 'level': level} for level in easy_train]
+        medium_combine = [{'difficulty': 'medium', 'level': level} for level in medium_train]
+        easy_and_medium = easy_combine + medium_combine
+        random.shuffle(easy_and_medium)
 
-            if easy_index < easy_len and medium_index < medium_len:
-                if random.random() < 0.50: # Choose Easy level
-                    easy_flag = True
-                else:
-                    medium_flag = True
-            
-            # If we already finished medium levels or randomly chose easy then train on easy
-            if medium_index >= medium_len or easy_flag:
+        for difficulty,level in easy_and_medium:
+            if difficulty == 'easy':
                 level_start = time.time()
-                board = Board(easy_path + '/' + easy_train[easy_index])
+                board = Board(easy_path + '/' + level)
                 env = DQNEnv(board, max_size, 200 + 50*board.num_boxes)
                 agent.env = env
                 agent.train(500)
 
-                f.write(f'{easy_train[easy_index]}:\n')
+                f.write(f'{level}:\n')
                 f.write(f'\tTime to train: {time.time()-level_start}s\n')
-
-                easy_index += 1
-            # If we already finished easy levels or randomly chose medium then train on medium
-            elif easy_index >= easy_len or medium_flag:
+            else:
                 level_start = time.time()
-                board = Board(medium_path + '/' + medium_train[medium_index])
+                board = Board(medium_path + '/' + level)
                 env = DQNEnv(board, max_size, 300 + 75*board.num_boxes)
                 agent.env = env
                 agent.train(500)
 
-                f.write(f'{medium_train[medium_index]}:\n')
+                f.write(f'{level}:\n')
                 f.write(f'\tTime to train: {time.time()-level_start}s\n')
-
-                medium_index += 1
             
         f.write(f'Total time to train: {time.time()-easy_and_medium_start}s\n\n')
         # MEDIUM AND HARD TRAINING
@@ -128,42 +116,31 @@ if __name__ == '__main__':
         agent.epsilon_step_counter = 0
 
         #random.shuffle(medium_train) # Reshuffle training levels again (since we alr ran through it previously)
-        medium_index = 0
-        hard_index = 0
-        for i in range(medium_len+hard_len):
-            medium_flag = False
-            hard_flag = False
+        medium_combine = [{'difficulty': 'medium', 'level': level} for level in medium_train]
+        hard_combine = [{'difficulty': 'hard', 'level': level} for level in hard_train]
+        medium_and_hard = medium_combine + hard_combine
+        random.shuffle(medium_and_hard)
 
-            if medium_index < medium_len and hard_index < hard_len:
-                if random.random() < 0.50: # Choose medium level
-                    medium_flag = True
-                else:
-                    hard_flag = True
-            
-            # If we already finished hard levels or randomly chose medium then train on medium
-            if hard_index >= hard_len or medium_flag:
+        for difficulty,level in medium_and_hard:
+            if difficulty == 'medium':
                 level_start = time.time()
-                board = Board(medium_path + '/' + medium_train[medium_index])
+                board = Board(medium_path + '/' + level)
                 env = DQNEnv(board, max_size, 300 + 75*board.num_boxes)
                 agent.env = env
                 agent.train(500)
 
-                f.write(f'{medium_train[medium_index]}:\n')
+                f.write(f'{level}:\n')
                 f.write(f'\tTime to train: {time.time()-level_start}s\n')
-
-                medium_index += 1
-            # If we already finished medium levels or randomly chose hard then train on hard
-            elif medium_index >= medium_len or hard_flag:
+            else:
                 level_start = time.time()
-                board = Board(hard_path + '/' + hard_train[hard_index])
+                board = Board(hard_path + '/' + level)
                 env = DQNEnv(board, max_size, 500 + 100*board.num_boxes)
                 agent.env = env
                 agent.train(500)
 
-                f.write(f'{hard_train[hard_index]}:\n')
+                f.write(f'{level}:\n')
                 f.write(f'\tTime to train: {time.time()-level_start}s\n')
 
-                hard_index += 1
         f.write(f'Total time to train: {time.time()-medium_and_hard_start}s\n\n')
         f.write('============================================================\n')
         f.write(f'Total training time: {time.time()-total_start}s')

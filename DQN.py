@@ -259,20 +259,20 @@ class Agent:
 
         # Double Q Learn
         with torch.no_grad():
-            # Get action from policy network
-            policy_q_values_next = self.policy_dqn(next_states)
-            policy_actions = torch.argmax(policy_q_values_next, dim=1, keepdim=True)
+            # # Get action from policy network
+            # policy_q_values_next = self.policy_dqn(next_states)
+            # policy_actions = torch.argmax(policy_q_values_next, dim=1, keepdim=True)
 
-            # Use target nework
-            target_q_values   = self.target_dqn(next_states) # Get all Q-values from target
-            q_values = target_q_values.gather(1, policy_actions)
+            # # Use target nework
+            # target_q_values   = self.target_dqn(next_states) # Get all Q-values from target
+            # q_values = target_q_values.gather(1, policy_actions)
 
-            # GENIUS if the transition is done (True) for whatever reason, only use reward, else (False) do entire equation
-            targets  = rewards + (~dones) * self.discount_factor * q_values # Get highest Q-value
+            # # GENIUS if the transition is done (True) for whatever reason, only use reward, else (False) do entire equation
+            # targets  = rewards + (~dones) * self.discount_factor * q_values # Get highest Q-value
 
             # Single Q Learning
-            # target_q_values = self.target_dqn(next_states)
-            # targets = rewards + (~done) * self.discount_factor * target_q_values.max(1, keepdim=True)[0]
+            target_q_values = self.target_dqn(next_states)
+            targets = rewards + (~dones) * self.discount_factor * target_q_values.max(1, keepdim=True)[0]
 
         # Compute loss for batch
         loss = self.loss_fn(current_q, targets)

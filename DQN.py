@@ -324,8 +324,9 @@ class Agent:
     def _plot_results(self, rewards_per_episode, epsilon_history):
         episodes = np.arange(len(rewards_per_episode))
         
-        # 20 episode window average       
-        weights = np.ones(20) / 20
+        # 20 episode window average
+        window = 20       
+        weights = np.ones(window) / window
         smoothed = np.convolve(rewards_per_episode, weights, mode="same")
         
         plt.figure(figsize=(24, 8), dpi=100)
@@ -334,7 +335,8 @@ class Agent:
         ax1 = plt.subplot(1, 2, 1)
 
         # Plot raw data faintly (Every 5th episode)
-        ax1.plot(episodes[::5], rewards_per_episode[::5], color="blue", alpha=0.25, label=f"Raw (every {step}th)")
+        step = 5
+        ax1.plot(episodes[::step], rewards_per_episode[::step], color="blue", alpha=0.25, label=f"Raw (every {step}th)")
 
         # Plot window average
         ax1.plot(episodes, smoothed, color="orange", linewidth=2.5, label=f"{window}-episode moving avg")

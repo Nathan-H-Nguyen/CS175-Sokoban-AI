@@ -68,7 +68,7 @@ class DQNEnv:
         self.step_count += 1
 
         # Get new player and box positions
-        new_player = set(self.board.player_pos)
+        new_player = tuple(self.board.player_pos)
         new_boxes = frozenset(self.board.boxes)
 
         # Calculate reward after making move
@@ -176,7 +176,7 @@ class DQNEnv:
         
         # Penalty for deadlock -20
         if self.board.box_corner_trap() or self.board.adjacent_box_trap() or self.board.unpushable_boxes_trap():
-            return -20.0
+            return -10.0
         
         # Penalty for invalid move
         # i.e. tried to move in wall or push box that cant be pushed
@@ -189,11 +189,11 @@ class DQNEnv:
         # Reward for pushing Box onto Storage Location
         for box in new_boxes:
             if box not in old_boxes and box in self.board.storages:
-                reward += 10.0
+                reward += 15.0
 
                 # Bonus reward for pushing into corner storage
                 if box in self.board.corner_storages:
-                    reward += 10.0
+                    reward += 15.0
         
         # Penalty for pushing Box off Storage Location
         # Less than pushed onto bc sometimes you gotta push off to solve

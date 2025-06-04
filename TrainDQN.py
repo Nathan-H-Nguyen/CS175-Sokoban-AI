@@ -70,7 +70,6 @@ if __name__ == '__main__':
         
         f.write(f'Total time to train: {time.time()-easy_start}s\n\n')
 
-
         # EASY AND MEDIUM TRAINING
         f.write('====================EASY AND MEDIUM TRAINING====================\n')
         easy_and_medium_start = time.time() # Track how long to complete easy and medium training
@@ -86,7 +85,9 @@ if __name__ == '__main__':
         easy_and_medium = easy_combine + medium_combine
         random.shuffle(easy_and_medium)
 
-        for difficulty,level in easy_and_medium:
+        for item in easy_and_medium:
+            difficulty = item['difficulty']
+            level = item['level']
             if difficulty == 'easy':
                 level_start = time.time()
                 board = Board(easy_path + '/' + level)
@@ -115,13 +116,16 @@ if __name__ == '__main__':
         agent.epsilon_half_life = 1_000_000
         agent.epsilon_step_counter = 0
 
-        #random.shuffle(medium_train) # Reshuffle training levels again (since we alr ran through it previously)
+        # Combine medium and hard then shuffle
         medium_combine = [{'difficulty': 'medium', 'level': level} for level in medium_train]
         hard_combine = [{'difficulty': 'hard', 'level': level} for level in hard_train]
         medium_and_hard = medium_combine + hard_combine
         random.shuffle(medium_and_hard)
 
-        for difficulty,level in medium_and_hard:
+        for item in medium_and_hard:
+            difficulty = item['difficulty']
+            level = item['level']
+
             if difficulty == 'medium':
                 level_start = time.time()
                 board = Board(medium_path + '/' + level)

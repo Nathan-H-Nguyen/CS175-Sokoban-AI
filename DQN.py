@@ -183,17 +183,10 @@ class Agent:
 
         # Train for x episodes
         for i in range(episodes):
-            # visualize = False
-            # if i % 50 == 0:
-            #     visualize = True
-
             state = self.env.reset()
             done = False # True when puzzle is solved or exceeded step limit (in DNQEnv)
             accumulated_reward = 0
             steps_to_finish = 0
-
-            # if visualize:
-            #     self.env.board.print()
 
             # While puzzle hasnt been solved and havent exceeded step limit
             while (not done):
@@ -204,9 +197,6 @@ class Agent:
                 new_state, reward, done, info = self.env.step(action)
                 accumulated_reward += reward
                 steps_to_finish += 1
-
-                # if visualize:
-                #     self.env.board.print()
 
                 # Append Transition to Memory
                 transition = Transition(state, action, reward, new_state, done)
@@ -229,6 +219,8 @@ class Agent:
                 self.epsilon = max(self.epsilon_min + (self.epsilon_start - self.epsilon_min) * math.exp(-self.epsilon_step_counter/self.epsilon_half_life), self.epsilon_min)
             
             print(f'{os.path.basename(self.env.board.file)} - Episode {i} finished after: {steps_to_finish} steps')
+            
+            # Lil visual debug thing
             if steps_to_finish == self.env.step_limit:
                 self.env.board.print()
             
@@ -240,31 +232,7 @@ class Agent:
         # Save Policy
         torch.save(self.policy_dqn.state_dict(), 'dqn.pt')
 
-        # Save Results Figure
-        plt.figure(figsize=(12, 5))
-
-        # Track accumulater reward per episode
-        # Episode vs Accumulated Reward
-        plt.subplot(1, 2, 1)
-        plt.plot(rewards_per_episode)
-        plt.title(f"{os.path.basename(self.env.board.file)}: Accumulated Reward per Episode")
-        plt.xlabel("Episode")
-        plt.ylabel("Accumulated Reward")
-
-        # Track epsilon decay per episode
-        # Episode vs Epsilon
-        plt.subplot(1, 2, 2)
-        plt.plot(epsilon_history)
-        plt.title(f"{os.path.basename(self.env.board.file)}: Epsilon Decay per Episode")
-        plt.xlabel("Episode")
-        plt.ylabel("Epsilon")
-
-        plt.tight_layout()
-        print(self.env.board.file)
-        plt.savefig(f"DQN_Training_Results_PNG/dqn_training_results_{self.train_count}_{os.path.basename(self.env.board.file)}.png")
-        plt.close()
-
-        self.train_count += 1
+        self._plot_results(rewards_per_episode, epsilon_history)
 
     def optimize(self, batch: List[Transition]) -> None:
         states = []
@@ -289,10 +257,22 @@ class Agent:
         policy_q_values = self.policy_dqn(states) # Get all Q-values from policy
         current_q = policy_q_values.gather(1, actions) # Get action specific Q-value
 
+        # Double Q Learn
         with torch.no_grad():
+            # Get action from policy network
+            policy_q_values_next = self.policy_dqn(next_states)
+            policy_actions = torch.argmax(policy_q_values_next, dim=1, keepdim=True)
+
+            # Use target nework
             target_q_values   = self.target_dqn(next_states) # Get all Q-values from target
-            # GENIUS if the transition is done (True) for whatever reason, only use target, else (False) do entire bellman equation
-            targets  = rewards + (~dones) * self.discount_factor * target_q_values.max(1, keepdim=True)[0] # Get highest Q-value
+            q_values = target_q_values.gather(1, policy_actions)
+
+            # GENIUS if the transition is done (True) for whatever reason, only use reward, else (False) do entire equation
+            targets  = rewards + (~dones) * self.discount_factor * q_values # Get highest Q-value
+
+            # Single Q Learning
+            # target_q_values = self.target_dqn(next_states)
+            # targets = rewards + (~done) * self.discount_factor * target_q_values.max(1, keepdim=True)[0]
 
         # Compute loss for batch
         loss = self.loss_fn(current_q, targets)
@@ -340,3 +320,51 @@ class Agent:
         self.epsilon = prev_epsilon
 
         return {'win': info['win'], 'total_steps': total_steps, 'accumulated_reward': accumulated_reward, 'actions': actions}
+
+    def _plot_results(self, rewards_per_episode, epsilon_history):
+        episodes = np.arange(len(rewards_per_episode))
+        
+        # 20 episode window average       
+        weights = np.ones(20) / 20
+        smoothed = np.convolve(rewards_per_episode, weights, mode="same")
+        
+        plt.figure(figsize=(24, 8), dpi=100)
+
+        # Accumulated Reward subplot
+        ax1 = plt.subplot(1, 2, 1)
+
+        # Plot raw data faintly (Every 5th episode)
+        ax1.plot(episodes[::5], rewards_per_episode[::5], color="blue", alpha=0.25, label=f"Raw (every {step}th)")
+
+        # Plot window average
+        ax1.plot(episodes, smoothed, color="orange", linewidth=2.5, label=f"{window}-episode moving avg")
+
+        ax1.set_title(f"{os.path.basename(self.env.board.file)}: Accumulated Reward per Episode", fontsize=20)
+        ax1.set_xlabel("Episode", fontsize=16)
+        ax1.set_ylabel("Accumulated Reward", fontsize=16)
+        ax1.grid(True, linestyle="--", linewidth=0.5, alpha=0.7)
+        ax1.legend(fontsize=12)
+
+        # Tick every 50 episodes on x axis
+        ax1.set_xticks(np.arange(0, len(episodes)+1, 50))
+        ax1.set_xticklabels([str(x) for x in np.arange(0, len(episodes)+1, 50)], fontsize=12)
+        ax1.tick_params(axis="y", labelsize=12)
+
+        # Epsilon Decay subplot
+        ax2 = plt.subplot(1, 2, 2)
+        ax2.plot(episodes, epsilon_history, color="green", linewidth=2)
+        ax2.set_title(f"{os.path.basename(self.env.board.file)}: Epsilon Decay per Episode", fontsize=20)
+        ax2.set_xlabel("Episode", fontsize=16)
+        ax2.set_ylabel("Epsilon", fontsize=16)
+        ax2.grid(True, linestyle="--", linewidth=0.5, alpha=0.7)
+
+        # Tick every 50 episode on x axis
+        ax2.set_xticks(np.arange(0, len(episodes)+1, 50))
+        ax2.set_xticklabels([str(x) for x in np.arange(0, len(episodes)+1, 50)], fontsize=12)
+        ax2.tick_params(axis="y", labelsize=12)
+
+        plt.tight_layout()
+        plt.savefig(f"DQN_Training_Results_PNG/dqn_training_results_{self.train_count}_{os.path.basename(self.env.board.file)}.png")
+        plt.close()
+        
+        self.train_count += 1

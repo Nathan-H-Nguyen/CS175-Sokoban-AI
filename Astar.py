@@ -4,6 +4,7 @@ import copy
 from typing import Tuple, Set, FrozenSet
 from solver import Solver
 
+
 class AStar(Solver):
     def solve(self) -> list[str]:
         """

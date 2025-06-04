@@ -1,6 +1,6 @@
 from Board import *
 from BFS import BFS
-from AStar import AStar
+from Astar import AStar
 from time import time
 
 if __name__ == '__main__':

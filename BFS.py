@@ -24,15 +24,10 @@ class BFS(Solver):
                 print (f"Total Iterations: {iteration}")
                 return path
 
-            for move in 'LRUD':
-                result = self._simulate_move(player_pos, boxes, move)
-                if result:
-                    new_pos, new_boxes = result
-                    if (new_pos, new_boxes) not in self.visited: # Check if already visited state
-                        if not self._corner_trap(new_boxes): # Check if not corner trapped
-                            iteration += 1
-                            self.visited.add((new_pos, new_boxes))
-                            queue.append(((new_pos, new_boxes), path + [move]))
+            for new_pos, new_boxes, move in self._expand_moves(player_pos, boxes):
+                iteration += 1
+                self.visited.add((new_pos, new_boxes))
+                queue.append(((new_pos, new_boxes), path + [move]))
 
         return []
     

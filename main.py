@@ -6,7 +6,7 @@ from time import time
 if __name__ == '__main__':
     test = True
     test_version = "A*"
-    test_filename = "Sokoban-benchmarks/Sokoban/sokoban01.txt"
+    test_filename = "Sokoban-benchmarks/Sokoban/sokoban0000.txt"
 
     if len(sys.argv) < 2:
         filename = test_filename if test else "Sokoban-benchmarks/Sokoban/" + input("Enter the input path filename (e.g., 'input.txt'): ")

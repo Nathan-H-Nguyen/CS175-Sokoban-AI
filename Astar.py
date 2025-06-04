@@ -31,18 +31,12 @@ class AStar(Solver):
                 print (f"\nTotal Iterations: {iteration}")
                 return path
 
-            for move in 'LRUD':
-                result = self._simulate_move(player_pos, boxes, move)
-                if result:
-                    new_pos, new_boxes = result
-
-                    if (new_pos, new_boxes) not in self.visited: # Check if already visited state
-                        if not self._corner_trap(new_boxes): # Check if not corner trapped
-                            iteration += 1
-                            self.visited.add((new_pos, new_boxes))
-                            new_g_score = g_score + 1
-                            new_f_score = new_g_score + self.heuristic(new_boxes)
-                            heapq.heappush(queue, (new_f_score, new_g_score, (new_pos, new_boxes), path + [move]))
+            for new_pos, new_boxes, move in self._expand_moves(player_pos, boxes):
+                iteration += 1
+                self.visited.add((new_pos, new_boxes))
+                new_g_score = g_score + 1
+                new_f_score = new_g_score + self.heuristic(new_boxes)
+                heapq.heappush(queue, (new_f_score, new_g_score, (new_pos, new_boxes), path + [move]))
 
         return []
     

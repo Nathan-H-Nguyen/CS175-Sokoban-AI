@@ -1,13 +1,12 @@
 from Board import *
 from BFS import BFS
-from AStar import AStar
-from Astar2 import AstarSolver
+from Astar import AStar
 from time import time
 
 if __name__ == '__main__':
     test = True
-    test_version = "A*2"
-    test_filename = "Sokoban-benchmarks/Sokoban/sokoban01.txt"
+    test_version = "A*"
+    test_filename = "Sokoban-benchmarks/Sokoban/sokoban0000.txt"
 
     if len(sys.argv) < 2:
         filename = test_filename if test else "Sokoban-benchmarks/Sokoban/" + input("Enter the input path filename (e.g., 'input.txt'): ")
@@ -130,7 +129,3 @@ if __name__ == '__main__':
                 f.write('\n\n')
 
                 print("Game Won!")
-
-    elif version == 'A*2':
-        solver = AstarSolver(board)
-        solver.solve()

@@ -10,16 +10,16 @@ class Solver:
         raise NotImplementedError()
 
 
-    def _expand_moves(self, player_pos, boxes):
+    def _expand_moves(self, player_pos: Tuple[int, int], boxes: FrozenSet[Tuple[int, int]]) -> Tuple[Tuple[int, int], FrozenSet[Tuple[int, int]]]:
         """
         Expand moves in all directions and yield results
 
         Args:
-            pos (Tuple[int, int]): (x,y) Tuple representing the current position
-            direction (str): Direction to get new position
+            player_pos (Tuple[int, int]): (x,y) Tuple representing the current position
+            boxes (FrozenSet[Tuple[int, int]]): current boxes in state
 
         Returns:
-            Tuple[int, int]: (x,y) Tuple representing new position in direction
+            player_pos, boxes: returns updated arguments
         """
         for move in 'LRUD':
             result = self._simulate_move(player_pos, boxes, move)

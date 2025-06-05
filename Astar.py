@@ -50,8 +50,4 @@ class AStar(Solver):
         Returns:
             int: Manhattan Distance of all boxes to storage locations
         """
-        manhattan_distance = 0
-        for box in boxes:
-            manhattan_distance += min((abs(box[0] - storage[0]) + abs(box[1] - storage[1])) for storage in self.initial_board.storages)
-            
-        return manhattan_distance
+        return sum(min((abs(box[0] - storage[0]) + abs(box[1] - storage[1])) for storage in self.initial_board.storages) for box in boxes)

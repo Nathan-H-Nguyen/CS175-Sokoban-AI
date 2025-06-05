@@ -462,3 +462,52 @@ class Board:
                     return True
         
         return False
+
+
+
+
+    def write_output(self, f, input_file, elapsed_time, path):
+        f.write(f'Input File: {input_file}\n\n')
+        if not path:
+            f.write("No solution found.\n\n")
+            f.write(
+                "#########################################################################################################################################################################")
+            f.write('\n\n')
+            print("No solution found.")
+        else:
+            f.write(f"Time to solve: {elapsed_time}s\n")
+            print(f"Time to solve: {elapsed_time}s")
+
+            f.write(f"Number of moves: {len(path)}\n")
+            print(f"Number of moves: {len(path)}")
+
+            moves = "Moves:" + ''.join(path)
+            f.write(moves + '\n')
+            print(moves)
+
+            f.write('\n\n')
+            print('\n')
+
+            self.print_to_file(f)
+            self.print()
+
+            f.write('\n\n')
+            print('\n')
+            for move in path:
+                f.write(f"Move: {move}\n")
+                print(f"Move: {move}")
+
+                self.move(move)
+
+                self.print_to_file(f)
+                self.print()
+
+                f.write('\n\n')
+                print('\n')
+
+            f.write("Game Won!\n\n")
+            f.write(
+                "#########################################################################################################################################################################")
+            f.write('\n\n')
+
+            print("Game Won!")

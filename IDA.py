@@ -5,7 +5,7 @@ from collections import deque
 
 class IDA(AStar):
     def solve(self):
-        bound = self.heuristic(self.initial_board.boxes)
+        bound = self.hungarian_heuristic(frozenset(self.initial_board.boxes))
         state = (self.initial_board.player_pos, frozenset(self.initial_board.boxes))
         path_stack = deque()
         path_stack.append(state)
@@ -28,7 +28,7 @@ class IDA(AStar):
     def _search(self, path_stack: deque, path_moves: deque, path_visited: set, g, bound, transposition):
         player_pos, boxes = path_stack[-1]
         state = (player_pos, boxes)
-        f = g + self.heuristic(boxes)
+        f = g + self.hungarian_heuristic(boxes)
         if f > bound:
             return f
 

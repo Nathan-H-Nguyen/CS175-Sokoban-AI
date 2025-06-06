@@ -281,6 +281,9 @@ class Board:
         Returns:
             bool: True if all boxes not on storages are unpushable, otherwise False
         """
+        if self.boxes == self.storages:
+            return False
+        
         for box in self.boxes:
             # If box is on a storage ignore it
             if box in self.storages:

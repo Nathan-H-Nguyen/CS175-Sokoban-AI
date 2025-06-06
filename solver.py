@@ -25,7 +25,7 @@ class Solver:
             result = self._simulate_move(player_pos, boxes, move)
             if result:
                 new_pos, new_boxes = result
-                if (new_pos, new_boxes) not in self.visited and not self._corner_trap(new_boxes):  # Check if already visited state
+                if (new_pos, new_boxes) not in self.visited and not self._deadlock(new_boxes):  # Check if already visited state
                     yield new_pos, new_boxes, move
 
 
@@ -182,6 +182,9 @@ class Solver:
         Returns:
             bool: True if all boxes not on storages are unpushable, otherwise False
         """
+        if boxes == self.initial_board.storages:
+            return False
+        
         for box in boxes:
             # If box is on a storage ignore it
             if box in self.initial_board.storages:

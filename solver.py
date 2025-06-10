@@ -5,6 +5,7 @@ class Solver:
     def __init__(self, board: Board):
         self.initial_board = board
         self.visited = set()
+        self.transposition = set() # Boxes in deadlock state
 
     def solve(self):
         raise NotImplementedError()
@@ -25,7 +26,29 @@ class Solver:
             result = self._simulate_move(player_pos, boxes, move)
             if result:
                 new_pos, new_boxes = result
-                if (new_pos, new_boxes) not in self.visited and not self._deadlock(new_boxes):  # Check if already visited state
+                if (new_pos, new_boxes) not in self.visited and new_boxes not in self.transposition:  # Check if already visited state
+                    # If deadlock save box positions in transposition table so we dont recalculate
+                    if not self._deadlock(new_boxes):
+                        yield new_pos, new_boxes, move
+                    else:
+                        self.transposition.add(new_boxes)
+    
+    def _expand_moves_bfs(self, player_pos: Tuple[int, int], boxes: FrozenSet[Tuple[int, int]]) -> Tuple[Tuple[int, int], FrozenSet[Tuple[int, int]]]:
+        """
+        Expand moves in all directions and yield results
+
+        Args:
+            player_pos (Tuple[int, int]): (x,y) Tuple representing the current position
+            boxes (FrozenSet[Tuple[int, int]]): current boxes in state
+
+        Returns:
+            player_pos, boxes: returns updated arguments
+        """
+        for move in 'LRUD':
+            result = self._simulate_move(player_pos, boxes, move)
+            if result:
+                new_pos, new_boxes = result
+                if (new_pos, new_boxes) not in self.visited:  # Check if already visited state
                     yield new_pos, new_boxes, move
 
 

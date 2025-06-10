@@ -21,10 +21,9 @@ class BFS(Solver):
             (player_pos, boxes), path = queue.popleft()
 
             if boxes == self.initial_board.storages: # Check win condition
-                print (f"Total Iterations: {iteration}")
-                return path
+                return (path, iteration)
 
-            for new_pos, new_boxes, move in self._expand_moves(player_pos, boxes):
+            for new_pos, new_boxes, move in self._expand_moves_bfs(player_pos, boxes):
                 iteration += 1
                 self.visited.add((new_pos, new_boxes))
                 queue.append(((new_pos, new_boxes), path + [move]))

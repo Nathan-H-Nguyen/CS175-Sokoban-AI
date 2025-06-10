@@ -23,7 +23,7 @@ class AStar(Solver):
 
         # Initialize priority queue
         start_state = (self.initial_board.player_pos, frozenset(self.initial_board.boxes))
-        f_score = self.manhattan_heuristic(start_state[1])
+        f_score = self.hungarian_heuristic(start_state[1])
         g_score = 0
         queue = []
         heapq.heappush(queue, (f_score, g_score, start_state, []))
@@ -34,14 +34,13 @@ class AStar(Solver):
             f_score, g_score, (player_pos, boxes), path = heapq.heappop(queue)
 
             if boxes == self.initial_board.storages: # Check win condition
-                print (f"\nTotal Iterations: {iteration}")
-                return path
+                return (path, iteration)
 
             for new_pos, new_boxes, move in self._expand_moves(player_pos, boxes):
                 iteration += 1
                 self.visited.add((new_pos, new_boxes))
                 new_g_score = g_score + 1
-                new_f_score = new_g_score + self.manhattan_heuristic(new_boxes)
+                new_f_score = new_g_score + self.hungarian_heuristic(new_boxes)
                 heapq.heappush(queue, (new_f_score, new_g_score, (new_pos, new_boxes), path + [move]))
 
         return []
